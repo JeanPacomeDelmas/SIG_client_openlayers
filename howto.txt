@@ -1,0 +1,7 @@
+Installer node_modules :
+npm init
+npm install ol
+npm install --save-dev parcel-bundler
+
+Lancer le server npm :
+npx parcel index.html
