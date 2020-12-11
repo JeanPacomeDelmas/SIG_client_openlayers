@@ -1,4 +1,5 @@
 import 'ol/ol.css';
+// import response from 'express';
 import Feature from 'ol/Feature';
 import GeoJSON from 'ol/format/GeoJSON';
 import Map from 'ol/Map';
@@ -39,17 +40,16 @@ let styleFunction = function (feature) {
   return styles[feature.getGeometry().getType()];
 };
 
-app.use((req, res, next) => {
-      res.header('Access-Control-Allow-Origin', '*');
-      next();
-    });
+// const express = require('express');
+// const request = require('request');
+// const app = express();
+// app.use((req, res, next) => {
+      // res.header('Access-Control-Allow-Origin', '*');
+      // next();
+    // });
 
 
-// fetch(url)
-      // .then(function (response) { response => response.json(); }) // On récupère la réponse en JSON
-      // .then(function (html) {
-        // document.getElementById('info').innerHTML = html;
-      // });
+
 
 	// Les formes a afficher
 let geojsonObject = {
@@ -91,6 +91,22 @@ let map = new Map({
 });
 
 
+// fetch("http://localhost:55209", 
+		// {
+			// method: "GET",
+			// headers: {
+				// "X-Requested-With": "XMLHttpRequest",
+				// "Content-Type": "application/json",
+				// "Access-Control-Allow-Origin" : "*",
+				// "Access-Control-Expose-Headers" : "Content-Length,API-Key"
+			// },
+			// mode: 'no-cors'
+		// })
+      // .then(function (response) { response => response.json(); }) // On récupère la réponse en JSON
+      // .then(function (html) {
+        // alert("ok");
+      // });
+
 //On écoute les clics
 map.on('singleclick', function (evt) {
 	//Pour chaque salle sous le clic
@@ -101,19 +117,30 @@ map.on('singleclick', function (evt) {
 			method: "GET",
 			headers: {
 				"X-Requested-With": "XMLHttpRequest",
-				"Content-Type": "application/json"
-			}
+				"Content-Type": "application/json",
+				"Access-Control-Allow-Origin" : "*",
+				"Access-Control-Expose-Headers" : "Content-Length,API-Key"
+			},
+			mode: 'cors'
 		}).then(
 			// On récupère la réponse en JSON
 			response => response.json()
 		).then(data => {
-			//On peut utiliser data de la forme : {"id":1,"type":"Feature","geometry":{"coordinates":[[[0.0,0.0],[0.0,5.0],[8.0,5.0],[8.0,0.0],[0.0,0.0]]],"type":"Polygon"},"attributes":{"etage":{"nom":"rdc"},"numero":5,"fonction":{"nom":"TD"}}}
+			// On peut utiliser data de la forme : {"id":1,"type":"Feature","geometry":{"coordinates":[[[0.0,0.0],[0.0,5.0],[8.0,5.0],[8.0,0.0],[0.0,0.0]]],"type":"Polygon"},"attributes":{"etage":{"nom":"rdc"},"numero":5,"fonction":{"nom":"TD"}}}
+			alert("OK");
+			console.log(data);
 			document.getElementById('info_id').innerHTML = data.id;
 			document.getElementById('info_etage').innerHTML = data.etage.nom;
 			document.getElementById('info_fonction').innerHTML = data.fonction.nom;
 			document.getElementById('info_numero').innerHTML = data.numero;
 		})
 		.catch(e => alert(e))
+		
+		
+		// var invocation = new XMLHttpRequest();
+		// invocation.open('GET', "http://localhost:8081/api/salle/" + feature.id_, false);
+		// invocation.onreadystatechange = handler;
+		// invocation.send(); 
     })
 });
 

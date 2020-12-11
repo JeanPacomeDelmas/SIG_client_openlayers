@@ -117,7 +117,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"../../AppData/Roaming/npm-cache/_npx/15756/node_modules/parcel/src/builtins/bundle-url.js":[function(require,module,exports) {
+})({"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/src/builtins/bundle-url.js":[function(require,module,exports) {
 var bundleURL = null;
 
 function getBundleURLCached() {
@@ -149,7 +149,7 @@ function getBaseURL(url) {
 
 exports.getBundleURL = getBundleURLCached;
 exports.getBaseURL = getBaseURL;
-},{}],"../../AppData/Roaming/npm-cache/_npx/15756/node_modules/parcel/src/builtins/css-loader.js":[function(require,module,exports) {
+},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/src/builtins/css-loader.js":[function(require,module,exports) {
 var bundle = require('./bundle-url');
 
 function updateLink(link) {
@@ -184,13 +184,13 @@ function reloadCSS() {
 }
 
 module.exports = reloadCSS;
-},{"./bundle-url":"../../AppData/Roaming/npm-cache/_npx/15756/node_modules/parcel/src/builtins/bundle-url.js"}],"node_modules/ol/ol.css":[function(require,module,exports) {
+},{"./bundle-url":"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/src/builtins/bundle-url.js"}],"node_modules/ol/ol.css":[function(require,module,exports) {
 
         var reloadCSS = require('_css_loader');
         module.hot.dispose(reloadCSS);
         module.hot.accept(reloadCSS);
       
-},{"_css_loader":"../../AppData/Roaming/npm-cache/_npx/15756/node_modules/parcel/src/builtins/css-loader.js"}],"node_modules/ol/events/Event.js":[function(require,module,exports) {
+},{"_css_loader":"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/src/builtins/css-loader.js"}],"node_modules/ol/events/Event.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -72638,7 +72638,7 @@ module.exports = function(fonts, size, lineHeight) {
   return cssData[0] + sp + cssData[1] + sp + size + 'px' + (lineHeight ? '/' + lineHeight : '') + sp + cssData[2];
 };
 
-},{}],"../../AppData/Roaming/npm-cache/_npx/15756/node_modules/parcel/node_modules/base64-js/index.js":[function(require,module,exports) {
+},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/node_modules/base64-js/index.js":[function(require,module,exports) {
 'use strict'
 
 exports.byteLength = byteLength
@@ -72790,7 +72790,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],"../../AppData/Roaming/npm-cache/_npx/15756/node_modules/parcel/node_modules/ieee754/index.js":[function(require,module,exports) {
+},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/node_modules/ieee754/index.js":[function(require,module,exports) {
 /*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
@@ -72877,14 +72877,14 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],"../../AppData/Roaming/npm-cache/_npx/15756/node_modules/parcel/node_modules/isarray/index.js":[function(require,module,exports) {
+},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/node_modules/isarray/index.js":[function(require,module,exports) {
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],"../../AppData/Roaming/npm-cache/_npx/15756/node_modules/parcel/node_modules/buffer/index.js":[function(require,module,exports) {
+},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/node_modules/buffer/index.js":[function(require,module,exports) {
 
 var global = arguments[3];
 /*!
@@ -74677,7 +74677,7 @@ function isnan (val) {
   return val !== val // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":"../../AppData/Roaming/npm-cache/_npx/15756/node_modules/parcel/node_modules/base64-js/index.js","ieee754":"../../AppData/Roaming/npm-cache/_npx/15756/node_modules/parcel/node_modules/ieee754/index.js","isarray":"../../AppData/Roaming/npm-cache/_npx/15756/node_modules/parcel/node_modules/isarray/index.js","buffer":"../../AppData/Roaming/npm-cache/_npx/15756/node_modules/parcel/node_modules/buffer/index.js"}],"node_modules/@mapbox/mapbox-gl-style-spec/dist/index.es.js":[function(require,module,exports) {
+},{"base64-js":"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/node_modules/base64-js/index.js","ieee754":"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/node_modules/ieee754/index.js","isarray":"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/node_modules/isarray/index.js","buffer":"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/node_modules/buffer/index.js"}],"node_modules/@mapbox/mapbox-gl-style-spec/dist/index.es.js":[function(require,module,exports) {
 var global = arguments[3];
 var Buffer = require("buffer").Buffer;
 "use strict";
@@ -89374,7 +89374,7 @@ const visit = {
 exports.visit = visit;
 validateStyle.parsed = validateStyle;
 validateStyle.latest = validateStyle;
-},{"buffer":"../../AppData/Roaming/npm-cache/_npx/15756/node_modules/parcel/node_modules/buffer/index.js"}],"node_modules/ol-mapbox-style/dist/util.js":[function(require,module,exports) {
+},{"buffer":"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/node_modules/buffer/index.js"}],"node_modules/ol-mapbox-style/dist/util.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -93802,6 +93802,7 @@ var _condition = require("ol/events/condition");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+// import response from 'express';
 // Les styles des formes
 var styles = {
   'LineString': new _style.Style({
@@ -93830,17 +93831,15 @@ var styles = {
 
 var styleFunction = function styleFunction(feature) {
   return styles[feature.getGeometry().getType()];
-};
-
-app.use(function (req, res, next) {
-  res.header('Access-Control-Allow-Origin', '*');
-  next();
-}); // fetch(url)
-// .then(function (response) { response => response.json(); }) // On récupère la réponse en JSON
-// .then(function (html) {
-// document.getElementById('info').innerHTML = html;
+}; // const express = require('express');
+// const request = require('request');
+// const app = express();
+// app.use((req, res, next) => {
+// res.header('Access-Control-Allow-Origin', '*');
+// next();
 // });
 // Les formes a afficher
+
 
 var geojsonObject = {
   'type': 'FeatureCollection',
@@ -93885,7 +93884,22 @@ var map = new _Map.default({
     center: [20, 10],
     zoom: 21
   })
-}); //On écoute les clics
+}); // fetch("http://localhost:55209", 
+// {
+// method: "GET",
+// headers: {
+// "X-Requested-With": "XMLHttpRequest",
+// "Content-Type": "application/json",
+// "Access-Control-Allow-Origin" : "*",
+// "Access-Control-Expose-Headers" : "Content-Length,API-Key"
+// },
+// mode: 'no-cors'
+// })
+// .then(function (response) { response => response.json(); }) // On récupère la réponse en JSON
+// .then(function (html) {
+// alert("ok");
+// });
+//On écoute les clics
 
 map.on('singleclick', function (evt) {
   //Pour chaque salle sous le clic
@@ -93895,27 +93909,35 @@ map.on('singleclick', function (evt) {
       method: "GET",
       headers: {
         "X-Requested-With": "XMLHttpRequest",
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "Content-Length,API-Key"
+      },
+      mode: 'cors'
     }).then( // On récupère la réponse en JSON
     function (response) {
       return response.json();
     }).then(function (data) {
-      //On peut utiliser data de la forme : {"id":1,"type":"Feature","geometry":{"coordinates":[[[0.0,0.0],[0.0,5.0],[8.0,5.0],[8.0,0.0],[0.0,0.0]]],"type":"Polygon"},"attributes":{"etage":{"nom":"rdc"},"numero":5,"fonction":{"nom":"TD"}}}
+      // On peut utiliser data de la forme : {"id":1,"type":"Feature","geometry":{"coordinates":[[[0.0,0.0],[0.0,5.0],[8.0,5.0],[8.0,0.0],[0.0,0.0]]],"type":"Polygon"},"attributes":{"etage":{"nom":"rdc"},"numero":5,"fonction":{"nom":"TD"}}}
+      alert("OK");
+      console.log(data);
       document.getElementById('info_id').innerHTML = data.id;
       document.getElementById('info_etage').innerHTML = data.etage.nom;
       document.getElementById('info_fonction').innerHTML = data.fonction.nom;
       document.getElementById('info_numero').innerHTML = data.numero;
     }).catch(function (e) {
       return alert(e);
-    });
+    }); // var invocation = new XMLHttpRequest();
+    // invocation.open('GET', "http://localhost:8081/api/salle/" + feature.id_, false);
+    // invocation.onreadystatechange = handler;
+    // invocation.send(); 
   });
 });
 
 document.getElementById("buttonEdit").onclick = function () {
   console.log("DUH");
 };
-},{"ol/ol.css":"node_modules/ol/ol.css","ol/Feature":"node_modules/ol/Feature.js","ol/format/GeoJSON":"node_modules/ol/format/GeoJSON.js","ol/Map":"node_modules/ol/Map.js","ol/View":"node_modules/ol/View.js","ol/source":"node_modules/ol/source.js","ol/layer":"node_modules/ol/layer.js","ol/style":"node_modules/ol/style.js","ol/interaction/Select":"node_modules/ol/interaction/Select.js","ol/events/condition":"node_modules/ol/events/condition.js"}],"../../AppData/Roaming/npm-cache/_npx/14836/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"ol/ol.css":"node_modules/ol/ol.css","ol/Feature":"node_modules/ol/Feature.js","ol/format/GeoJSON":"node_modules/ol/format/GeoJSON.js","ol/Map":"node_modules/ol/Map.js","ol/View":"node_modules/ol/View.js","ol/source":"node_modules/ol/source.js","ol/layer":"node_modules/ol/layer.js","ol/style":"node_modules/ol/style.js","ol/interaction/Select":"node_modules/ol/interaction/Select.js","ol/events/condition":"node_modules/ol/events/condition.js"}],"../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -93943,7 +93965,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60251" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57474" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
@@ -94119,5 +94141,5 @@ function hmrAcceptRun(bundle, id) {
     return true;
   }
 }
-},{}]},{},["../../AppData/Roaming/npm-cache/_npx/14836/node_modules/parcel/src/builtins/hmr-runtime.js","main.js"], null)
+},{}]},{},["../../../../../../AppData/Roaming/npm-cache/_npx/14476/node_modules/parcel/src/builtins/hmr-runtime.js","main.js"], null)
 //# sourceMappingURL=/main.1f19ae8e.js.map
