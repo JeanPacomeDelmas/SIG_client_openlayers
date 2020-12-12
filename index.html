@@ -15,6 +15,12 @@
   </head>
   <body>
     <div id="map" class="map"></div>
+	<label>Etage :</label>
+	
+	<select id="etage">
+	</select>
+	<br/>
+	<label>Salle :</label>
 	<table>
 		<tbody>
 			<tr>
@@ -33,12 +39,19 @@
 				<td>Numero :</td>
 				<td id="info_numero"></td>
 			</tr>
-			
 		</tbody>
 	</table>
 	
+	<br/>
+	<br/>
 	
-	  <button id="buttonEdit">Edit</button>
+	<label>Mode de sélection</label>
+	<select id="modeSelection">
+		<option value="consulter" selected>Consulter</option>
+		<option value="editer">Editer</option>
+		<option value="pathfinding">Trouver son chemin</option>
+	</select>
+	
 	
     <script src="main.js"></script>
   </body>
