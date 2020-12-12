@@ -93802,14 +93802,16 @@ var _condition = require("ol/events/condition");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// import response from 'express';
 //======= Declarations
-var listLayers = []; //======= Styles
+var listLayers = [];
+var map;
+var salle_selectionnee = "";
+var mode; //======= Styles
 
 var styleSalles = new _style.Style({
   stroke: new _style.Stroke({
     color: 'blue',
-    width: 2
+    width: 1
   }),
   fill: new _style.Fill({
     color: 'rgba(0, 0, 255, 0.1)'
@@ -93820,9 +93822,6 @@ var stylePortes = new _style.Style({
     color: 'blue',
     lineDash: [4],
     width: 3
-  }),
-  fill: new _style.Fill({
-    color: 'rgba(0, 0, 255, 0.1)'
   })
 });
 var styleSalles2 = new _style.Style({
@@ -93875,25 +93874,61 @@ var stylePath = new _style.Style({
   })
 }); //====== Initialisation de la map et des clics
 
-var urls = ["http://localhost:8081/api/salle/1", "http://localhost:8081/api/salle/2"];
+var urls = ["http://localhost:8081/api/salles/etage/1", //Layer 0
+"http://localhost:8081/api/salles/etage/2", //Layer 1
+"http://localhost:8081/api/portes/etage/1", //Layer 2
+"http://localhost:8081/api/portes/etage/2", //Layer 3
+"http://localhost:8081/api/escaliers" //Layer 4
+]; //On devrait plutot boucler sur les etages dans le cas de + d etages, et il faudrait aussi un appel escalier/etage/{idetage}
+
 var urlsFetchs = [];
 urls.forEach(function (u) {
-  urlsFetchs.push(fetch(u).then(function (r) {
+  urlsFetchs.push(fetch(u, {
+    "headers": {
+      'Access-Control-Allow-Origin': "*",
+      'Access-Control-Allow-Headers': "*"
+    },
+    "mode": "cors"
+  }).then(function (r) {
     return r.json();
   }));
-});
+}); //Recuperer les salles, les portes et les escaliers
+
 Promise.all(urlsFetchs).then(function (entities) {
   //Retour des formes sous json
   entities.forEach(function (entity, i) {
     var geojsonObject = {
       'type': 'FeatureCollection',
-      'features': [entity]
+      'features': entity
     };
     var vectorSource = new _source.Vector({
       features: new _GeoJSON.default().readFeatures(geojsonObject)
     });
     var style;
-    if (i == 0) style = styleSalles;else if (i == 1) style = stylePortes;else style = styleEscalier;
+
+    switch (i) {
+      //On devrait plutot boucler sur les etages dans le cas de + d etages
+      case 0:
+        style = styleSalles;
+        break;
+
+      case 1:
+        style = styleSalles2;
+        break;
+
+      case 2:
+        style = stylePortes;
+        break;
+
+      case 3:
+        style = stylePortes2;
+        break;
+
+      case 4:
+        style = styleEscalier;
+        break;
+    }
+
     listLayers.push(new _layer.Vector({
       id: i,
       source: vectorSource,
@@ -93901,31 +93936,38 @@ Promise.all(urlsFetchs).then(function (entities) {
     }));
   }); // Affiche la liste des features
 
-  var map = new _Map.default({
+  map = new _Map.default({
     layers: listLayers,
     target: 'map',
     view: new _View.default({
-      center: [20, 10],
+      center: [30, 10],
       zoom: 21
     })
-  }); //On écoute les clics
+  });
+  switchToEtage(1); //On écoute les clics
 
   map.on('singleclick', function (evt) {
-    //Pour chaque salle sous le clic
+    salle_selectionnee = "";
+    majAffichageSalle(salle_selectionnee); //Pour chaque salle sous le clic
+
     map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) {
-      // console.log(layer.get("id"));
       fetch("http://localhost:8081/api/salle/" + feature.id_, {
-        method: "GET"
+        method: "GET",
+        "headers": {
+          'Access-Control-Allow-Origin': "*",
+          'Access-Control-Allow-Headers': "*"
+        },
+        "mode": "cors"
       }).then(function (response) {
         return response.json();
       }).then(function (salle) {
-        document.getElementById('info_id').innerHTML = salle.id;
-        document.getElementById('info_etage').innerHTML = salle.etage.nom;
-        document.getElementById('info_fonction').innerHTML = salle.fonction.nom;
-        document.getElementById('info_numero').innerHTML = salle.numero == 0 ? "-" : salle.numero;
+        salle_selectionnee = salle;
+        majAffichageSalle(salle_selectionnee);
       }).catch(function (e) {
         return console.log(e);
       });
+
+      if (mode == "editer") {}
     });
   }); //Selectionne visuellement une salle
 
@@ -93933,38 +93975,134 @@ Promise.all(urlsFetchs).then(function (entities) {
   map.addInteraction(new _Select.default());
 }).catch(function (error) {
   console.log(error);
-}); //====== Initialisation de la liste des etages
+});
+
+function majAffichageSalle(salle) {
+  if (salle == "") {
+    document.getElementById('info_fonction').innerHTML = "";
+    document.getElementById('info_nom').innerHTML = "";
+  } else {
+    document.getElementById('info_fonction').innerHTML = salle.fonction.nom;
+    document.getElementById('info_nom').innerHTML = salle.nom;
+  }
+
+  majAffichageFormEdit(mode, salle);
+} //====== Initialisation de la liste des etages
+
 
 fetch("http://localhost:8081/api/etages", {
-  method: "GET"
+  "headers": {
+    'Access-Control-Allow-Origin': "*",
+    'Access-Control-Allow-Headers': "*"
+  },
+  "mode": "cors"
 }).then(function (response) {
   return response.json();
 }).then(function (etages) {
-  var selectHtml = document.getElementById("etage");
+  var selectEtage = document.getElementById("selectEtage");
   etages.forEach(function (etage) {
     var opt = document.createElement("option");
     opt.value = etage.id;
     opt.text = etage.nom;
-    selectHtml.appendChild(opt);
+    selectEtage.appendChild(opt);
   });
-  selectHtml.addEventListener("change", function (e) {
-    listLayers.forEach(function (lay) {
-      switch (lay.get("id")) {
-        case 0:
-          break;
-
-        case 1:
-          lay.setVisible(selectHtml.value != 1);
-          break;
-      }
-    }); // console.log(selectHtml.value);
-    // console.log(layer.get("id"));
+  selectEtage.addEventListener("change", function (e) {
+    switchToEtage(selectEtage.value);
   });
 }).catch(function (e) {
   return console.log(e);
-}); // vectorSource.addFeature(new Feature(new Circle([5e6, 7e6], 1e6)));
+});
 
-var mode = document.getElementById("modeSelection").value;
+function switchToEtage(numEtage) {
+  listLayers.forEach(function (lay) {
+    switch (lay.get("id")) {
+      //On devrait plutot boucler sur les etages dans le cas de + d etages
+      case 0:
+        lay.setVisible(numEtage == 1);
+        break;
+
+      case 1:
+        lay.setVisible(numEtage == 2);
+        break;
+
+      case 2:
+        lay.setVisible(numEtage == 1);
+        break;
+
+      case 3:
+        lay.setVisible(numEtage == 2);
+        break;
+      // case 4: lay.setVisible(numEtage==1 || numEtage==2); //Inutile, sauf si + d etages 
+      // break; 
+    }
+  });
+} //====== Initialisation de la liste des fonctions des salles
+
+
+fetch("http://localhost:8081/api/fonction_salles", {
+  "headers": {
+    'Access-Control-Allow-Origin': "*",
+    'Access-Control-Allow-Headers': "*"
+  },
+  "mode": "cors"
+}).then(function (response) {
+  return response.json();
+}).then(function (fonctions) {
+  var selectFonction = document.getElementById("selectFonction");
+  fonctions.forEach(function (fonc) {
+    var opt = document.createElement("option");
+    opt.value = fonc.nom;
+    opt.text = fonc.nom;
+    selectFonction.appendChild(opt);
+  });
+}).catch(function (e) {
+  return console.log(e);
+}); //====== Modification de l'affichage lors d'un changement de mode
+
+var selectMode = document.getElementById("selectMode");
+selectMode.addEventListener("change", function (e) {
+  mode = selectMode.value;
+  majAffichageFormEdit(mode, salle_selectionnee);
+});
+
+function majAffichageFormEdit(mode, salle) {
+  if (mode != "editer" || salle == "") document.getElementById("div_edit").style.display = "none";else {
+    document.getElementById("div_edit").style.display = "inline-block";
+    document.getElementById("input_nom").value = salle.nom;
+    document.getElementById("selectFonction").value = salle.fonction.nom;
+  }
+} //====== Action edition d'une salle
+
+
+document.getElementById("buttonValiderModif").addEventListener("click", function (e) {
+  salle_selectionnee.nom = document.getElementById("input_nom").value;
+  salle_selectionnee.fonction.nom = document.getElementById("selectFonction").value;
+  fetch("http://localhost:8081/api/salle/" + salle_selectionnee.id, {
+    "method": "PATCH",
+    "headers": {
+      "X-Requested-With": "XMLHttpRequest",
+      "Content-Type": "application/json",
+      'Access-Control-Allow-Origin': "*",
+      'Access-Control-Allow-Headers': "*"
+    },
+    "mode": "cors",
+    "body": JSON.stringify(salle_selectionnee)
+  }).then(function (r) {
+    majAffichageSalle(salle_selectionnee);
+    alert("Modification effectuee");
+  }).catch(function (e) {
+    return console.log(e);
+  });
+}); //====== Ajouter couche Localisation
+// let geojsonObject = {
+// 'type': 'FeatureCollection',
+// 'features' : [{}]
+// };
+// let vectorSource = new VectorSource({
+// features: new GeoJSON().readFeatures(geojsonObject),
+// });
+// map.addLayer(vectorSource);
+// vectorSource.addFeature(new Feature(new Circle([5e6, 7e6], 1e6)));
 },{"ol/ol.css":"node_modules/ol/ol.css","ol/Feature":"node_modules/ol/Feature.js","ol/format/GeoJSON":"node_modules/ol/format/GeoJSON.js","ol/Map":"node_modules/ol/Map.js","ol/View":"node_modules/ol/View.js","ol/source":"node_modules/ol/source.js","ol/layer":"node_modules/ol/layer.js","ol/style":"node_modules/ol/style.js","ol/interaction/Select":"node_modules/ol/interaction/Select.js","ol/events/condition":"node_modules/ol/events/condition.js"}],"../../../../../../AppData/Roaming/npm-cache/_npx/8776/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

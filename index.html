@@ -17,27 +17,19 @@
     <div id="map" class="map"></div>
 	<label>Etage :</label>
 	
-	<select id="etage">
-	</select>
+	<select id="selectEtage"></select>
+	
 	<br/>
 	<label>Salle :</label>
 	<table>
 		<tbody>
 			<tr>
-				<td>Id :</td>
-				<td id="info_id"></td>
-			</tr>
-			<tr>
-				<td>Etage :</td>
-				<td id="info_etage"></td>
-			</tr>
-			<tr>
 				<td>Fonction :</td>
 				<td id="info_fonction"></td>
 			</tr>
 			<tr>
-				<td>Numero :</td>
-				<td id="info_numero"></td>
+				<td>Nom :</td>
+				<td id="info_nom"></td>
 			</tr>
 		</tbody>
 	</table>
@@ -46,11 +38,27 @@
 	<br/>
 	
 	<label>Mode de sélection</label>
-	<select id="modeSelection">
+	<select id="selectMode">
 		<option value="consulter" selected>Consulter</option>
 		<option value="editer">Editer</option>
 		<option value="pathfinding">Trouver son chemin</option>
 	</select>
+	<br/><br/>
+	<div id="div_edit" style="display: none;">
+		<table>
+		<tbody>
+			<tr>
+				<td><label>Nouveau nom de la salle :</label></td>
+				<td><input id="input_nom" type="text"><br/></td>
+			</tr>
+			<tr>
+				<td><label>Nouvelle fonction :</label></td>
+				<td><select id="selectFonction"></select><br/></td>
+			</tr>
+		</tbody>
+	</table>
+	<button id="buttonValiderModif">Valider</button>
+	</div>
 	
 	
     <script src="main.js"></script>

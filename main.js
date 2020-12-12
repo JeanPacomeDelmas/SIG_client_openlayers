@@ -1,5 +1,4 @@
 import 'ol/ol.css';
-// import response from 'express';
 import Feature from 'ol/Feature';
 import GeoJSON from 'ol/format/GeoJSON';
 import Map from 'ol/Map';
@@ -12,12 +11,15 @@ import {altKeyOnly, click, pointerMove} from 'ol/events/condition';
 
 //======= Declarations
 let listLayers = [];
+let map;
+let salle_selectionnee = "";
+let mode;
 
 //======= Styles
 let styleSalles = new Style({ 
 	stroke: new Stroke({
       color: 'blue',
-      width: 2,
+      width: 1,
     }),
     fill: new Fill({
       color: 'rgba(0, 0, 255, 0.1)',
@@ -28,11 +30,8 @@ let stylePortes = new Style({
 	stroke: new Stroke({
       color: 'blue',
 	  lineDash: [4],
-      width: 3,
-    }),
-    fill: new Fill({
-      color: 'rgba(0, 0, 255, 0.1)',
-    }),
+      width: 3
+    })
 }); 
 
 let styleSalles2 = new Style({ 
@@ -89,30 +88,45 @@ let stylePath = new Style({
 
 //====== Initialisation de la map et des clics
 let urls = [
-	"http://localhost:8081/api/salle/1",
-	"http://localhost:8081/api/salle/2"
-];
+	"http://localhost:8081/api/salles/etage/1", //Layer 0
+	"http://localhost:8081/api/salles/etage/2", //Layer 1
+	"http://localhost:8081/api/portes/etage/1", //Layer 2
+	"http://localhost:8081/api/portes/etage/2", //Layer 3
+	"http://localhost:8081/api/escaliers" //Layer 4
+]; //On devrait plutot boucler sur les etages dans le cas de + d etages, et il faudrait aussi un appel escalier/etage/{idetage}
 let urlsFetchs = [];
 urls.forEach(function(u) {
-	urlsFetchs.push(fetch(u).then(r=>r.json()));
+	urlsFetchs.push(fetch(u, {"headers" : {
+'Access-Control-Allow-Origin': "*",
+'Access-Control-Allow-Headers': "*"}, "mode":"cors"}).then(r=>r.json()));
 })
-
+//Recuperer les salles, les portes et les escaliers
 Promise.all(urlsFetchs)
 .then(entities => {
 	//Retour des formes sous json
 	entities.forEach(function(entity, i) {
 		let geojsonObject = {
 			'type': 'FeatureCollection',
-			'features' : [entity]
+			'features' : entity
 		};
 		let vectorSource = new VectorSource({
 		  features: new GeoJSON().readFeatures(geojsonObject),
 		});
 		
 		let style;
-		if (i==0) style = styleSalles;
-		else if (i==1) style = stylePortes;
-		else style = styleEscalier;
+		switch (i) //On devrait plutot boucler sur les etages dans le cas de + d etages
+		{
+			case 0: style = styleSalles;
+				break;
+			case 1: style = styleSalles2;
+				break;
+			case 2: style = stylePortes;
+				break;
+			case 3: style = stylePortes2;
+				break;
+			case 4: style = styleEscalier;
+				break;
+		}
 		listLayers.push(new VectorLayer({
 			id: i,
 			source: vectorSource,
@@ -121,29 +135,39 @@ Promise.all(urlsFetchs)
 	});
 	
 	// Affiche la liste des features
-	let map = new Map({
+	map = new Map({
 	  layers: listLayers,
 	  target: 'map',
 	  view: new View({
-		center: [20, 10],
+		center: [30, 10],
 		zoom: 21,
 	  })
 	});
 	
+	switchToEtage(1);
+	
 	//On écoute les clics
 	map.on('singleclick', function (evt) {
+		salle_selectionnee = "";
+		majAffichageSalle(salle_selectionnee);
 		//Pour chaque salle sous le clic
 		map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) {
-			// console.log(layer.get("id"));
-			fetch("http://localhost:8081/api/salle/" + feature.id_, { method: "GET" }).then( response =>  response.json()).then(
+			fetch("http://localhost:8081/api/salle/" + feature.id_, 
+			{ method: "GET", "headers" : {
+				'Access-Control-Allow-Origin': "*",
+				'Access-Control-Allow-Headers': "*"}, "mode":"cors"}).then( response =>  response.json()).then(
 			salle => {
-				document.getElementById('info_id').innerHTML = salle.id;
-				document.getElementById('info_etage').innerHTML = salle.etage.nom;
-				document.getElementById('info_fonction').innerHTML = salle.fonction.nom;
-				document.getElementById('info_numero').innerHTML = (salle.numero==0?"-":salle.numero);
+				salle_selectionnee = salle;
+				majAffichageSalle(salle_selectionnee);
 			})
 			.catch(e => console.log(e))
+			
+			if (mode == "editer")
+			{
+				
+			}
 		})
+		
 	});
 	//Selectionne visuellement une salle
 	map.removeInteraction(new Select());
@@ -153,45 +177,135 @@ Promise.all(urlsFetchs)
     console.log(error);
 });
 
+function majAffichageSalle(salle)
+{
+	if (salle == "") 
+	{
+		document.getElementById('info_fonction').innerHTML = "";
+		document.getElementById('info_nom').innerHTML = "";
+	}
+	else
+	{
+		document.getElementById('info_fonction').innerHTML = salle.fonction.nom;
+		document.getElementById('info_nom').innerHTML = salle.nom;
+	}
+	majAffichageFormEdit(mode, salle);
+}
+
 //====== Initialisation de la liste des etages
-fetch("http://localhost:8081/api/etages", { method: "GET" }).then( response =>  response.json()).then(
+fetch("http://localhost:8081/api/etages", 
+{"headers" : {
+'Access-Control-Allow-Origin': "*",
+'Access-Control-Allow-Headers': "*"},
+"mode":"cors"}
+).then( 
+	response =>  response.json())
+.then(
 	etages => {
-		let selectHtml = document.getElementById("etage");
+		let selectEtage = document.getElementById("selectEtage");
 		etages.forEach(function(etage){
 			let opt = document.createElement("option");
 			opt.value = etage.id;
 			opt.text = etage.nom;
-			selectHtml.appendChild(opt);
+			selectEtage.appendChild(opt);
 		});
 		
-		selectHtml.addEventListener("change", function(e) {
-			listLayers.forEach(function(lay){
-				switch (lay.get("id"))
-				{
-					case 0: 
-						break;
-					case 1: lay.setVisible(selectHtml.value!=1)
-						break;
-				}
-			});
-			// console.log(selectHtml.value);
-			// console.log(layer.get("id"));
+		selectEtage.addEventListener("change", function(e) {
+			switchToEtage(selectEtage.value);
+		});
+	})
+.catch(e => console.log(e))
+
+function switchToEtage(numEtage)
+{
+	listLayers.forEach(function(lay){
+		switch (lay.get("id")) //On devrait plutot boucler sur les etages dans le cas de + d etages
+		{
+			case 0: lay.setVisible(numEtage==1);
+				break;
+			case 1: lay.setVisible(numEtage==2);
+				break;
+			case 2: lay.setVisible(numEtage==1);
+				break;
+			case 3: lay.setVisible(numEtage==2);
+				break;
+			// case 4: lay.setVisible(numEtage==1 || numEtage==2); //Inutile, sauf si + d etages 
+				// break; 
+		}
+	});
+}
+
+
+//====== Initialisation de la liste des fonctions des salles
+fetch("http://localhost:8081/api/fonction_salles", 
+{"headers" : {
+'Access-Control-Allow-Origin': "*",
+'Access-Control-Allow-Headers': "*"},
+"mode":"cors"}
+).then( 
+	response =>  response.json())
+.then(
+	fonctions => {
+		let selectFonction = document.getElementById("selectFonction");
+		fonctions.forEach(function(fonc){
+			let opt = document.createElement("option");
+			opt.value = fonc.nom;
+			opt.text = fonc.nom;
+			selectFonction.appendChild(opt);
 		});
 	})
 .catch(e => console.log(e))
 
 
+//====== Modification de l'affichage lors d'un changement de mode
+let selectMode = document.getElementById("selectMode");
+selectMode.addEventListener("change", function(e){
+	mode = selectMode.value;
+	majAffichageFormEdit(mode, salle_selectionnee)
+});
+
+function majAffichageFormEdit(mode, salle)
+{
+	if (mode != "editer" || salle == "")
+		document.getElementById("div_edit").style.display = "none";
+	else
+	{
+		document.getElementById("div_edit").style.display = "inline-block";
+		document.getElementById("input_nom").value = salle.nom;
+		document.getElementById("selectFonction").value = salle.fonction.nom;
+	}
+}
+
+//====== Action edition d'une salle
+document.getElementById("buttonValiderModif").addEventListener("click", function (e) {
+	salle_selectionnee.nom = document.getElementById("input_nom").value;
+	salle_selectionnee.fonction.nom = document.getElementById("selectFonction").value;
+	fetch("http://localhost:8081/api/salle/" + salle_selectionnee.id, 
+	{
+		"method": "PATCH",
+		"headers" : {
+		"X-Requested-With": "XMLHttpRequest",
+		"Content-Type": "application/json",
+		'Access-Control-Allow-Origin': "*",
+		'Access-Control-Allow-Headers': "*"},
+		"mode":"cors",
+		"body": JSON.stringify(salle_selectionnee) 
+	}).then( function (r) { majAffichageSalle(salle_selectionnee); alert("Modification effectuee"); } )
+	.catch(e => console.log(e))
+});
+
+
+//====== Ajouter couche Localisation
+// let geojsonObject = {
+	// 'type': 'FeatureCollection',
+	// 'features' : [{}]
+// };
+// let vectorSource = new VectorSource({
+  // features: new GeoJSON().readFeatures(geojsonObject),
+// });
+// map.addLayer(vectorSource);
+
+
 // vectorSource.addFeature(new Feature(new Circle([5e6, 7e6], 1e6)));
-
-
-let mode = document.getElementById("modeSelection").value;
-
-
-
-
-
-
-
-
 
 
