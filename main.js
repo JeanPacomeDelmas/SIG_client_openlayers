@@ -19,7 +19,9 @@ let etage;
 //variables pour la position
 let posIdPorte;
 let posEtage;
-
+let ok;
+let urlTestApiSpring = "http://192.168.1.38:8081/api/"
+let urlTestOpenLayers = "http://192.168.1.38:1234/"
 
 //======= Styles
 let styleSalles = new Style({ 
@@ -97,7 +99,7 @@ let stylePath = new Style({
 function setPositionWithUrl()
 {
 	let url = location.href;
-	if (url.length > "http://localhost:1234/".length) //S'il y a des parametres
+	if (url.length > urlTestOpenLayers.length) //S'il y a des parametres
 	{
 		let parametres = url.split("/");
 		let typePorte = parametres[3];
@@ -107,7 +109,7 @@ function setPositionWithUrl()
 		if (parametres.length>5);
 			coteEscalier = parametres[5];
 		let urlFetch;
-		fetch("http://localhost:8081/api/"+ typePorte +"/" + idPorte, 
+		fetch(urlTestApiSpring+ typePorte +"/" + idPorte, 
 		{ method: "GET", "headers" : {
 			'Access-Control-Allow-Origin': "*",
 			'Access-Control-Allow-Headers': "*"}, "mode":"cors"}).then( response =>  response.json()).then(
@@ -150,9 +152,9 @@ function getMilieuPorte(porte)
 
 //====== Initialisation de la map et des clics
 let urls = [
-	"http://localhost:8081/api/salles", //Layer 0
-	"http://localhost:8081/api/portes", //Layer 1
-	"http://localhost:8081/api/escaliers" //Layer 2
+	urlTestApiSpring + "salles", //Layer 0
+	urlTestApiSpring + "portes", //Layer 1
+	urlTestApiSpring + "escaliers" //Layer 2
 ]; //On devrait plutot boucler sur les etages dans le cas de + d etages, et il faudrait aussi un appel escalier/etage/{idetage}
 let urlsFetchs = [];
 urls.forEach(function(u) {
@@ -243,7 +245,7 @@ function majAffichageSalle(salle)
 }
 
 //====== Initialisation de la liste des etages
-fetch("http://localhost:8081/api/etages", 
+fetch(urlTestApiSpring + "etages", 
 {"headers" : {
 'Access-Control-Allow-Origin': "*",
 'Access-Control-Allow-Headers': "*"},
@@ -302,7 +304,7 @@ function switchToEtage(numEtage)
 
 
 //====== Initialisation de la liste des fonctions des salles
-fetch("http://localhost:8081/api/fonction_salles", 
+fetch(urlTestApiSpring + "fonction_salles", 
 {"headers" : {
 'Access-Control-Allow-Origin': "*",
 'Access-Control-Allow-Headers': "*"},
@@ -359,7 +361,7 @@ document.getElementById("buttonValiderModif").addEventListener("click", function
 	// salle_selectionnee.get("fonction").get("nom") = document.getElementById("selectFonction").value;
 	//salle_selectionnee est de type Feature, pas JSON. Pour eviter de devoir reecrire tout le JSON, je fais un appel a l'API
 	if (salle_selectionnee!=null)
-	fetch("http://localhost:8081/api/salle/" + salle_selectionnee.id_, 
+	fetch(urlTestApiSpring + "salle/" + salle_selectionnee.id_, 
 	{
 		"method": "GET",
 		"headers" : {
@@ -373,7 +375,7 @@ document.getElementById("buttonValiderModif").addEventListener("click", function
 		salleJSON => {
 			salleJSON.properties.nom = document.getElementById("input_nom").value;
 			salleJSON.properties.fonction.nom = document.getElementById("selectFonction").value;
-			fetch("http://localhost:8081/api/salle/" + salle_selectionnee.id_, 
+			fetch(urlTestApiSpring + "salle/" + salle_selectionnee.id_, 
 			{
 				"method": "PATCH",
 				"headers" : {
@@ -399,7 +401,6 @@ function getSalleById(map, idSalle)
 	});
 	return res;
 }
-
 
 
 //====== Ajouter/Supprimer/Modifier couche
@@ -471,7 +472,6 @@ function setLayerPosition(map, x, y)
 function majAffichageCouchePath(lay)
 {
 	lay.getSource().getFeatures().forEach(function (feature) {
-		console.log(feature.getProperties());
 		if (feature.get("etage")["id"]==numEtage)
 			showFeature(feature, lay.get("id"));
 		else
@@ -481,9 +481,8 @@ function majAffichageCouchePath(lay)
 
 function callAPIPath(posIdPorte, idSalleDestination)
 {
-	console.log(posIdPorte, idSalleDestination);
 	if (posIdPorte != null && idSalleDestination != null)
-	fetch("http://localhost:8081/api/trajet/porteDepart/"+posIdPorte+"/salle/"+idSalleDestination, //TODO
+	fetch(urlTestApiSpring + "trajet/porteDepart/"+posIdPorte+"/salle/"+idSalleDestination, //TODO
 	{"headers" : {
 	'Access-Control-Allow-Origin': "*",
 	'Access-Control-Allow-Headers': "*"},
@@ -533,6 +532,19 @@ function getStyleLayerById(idLayer)
 	}
 }
 
+function setLayerPath(map, listeLines)
+{
+	deleteLayer(map, "path");
+	let geojsonObject = {
+		'type': 'FeatureCollection',
+		'features' : listeLines
+	};
+	let vectorSource = new VectorSource({
+	  features: new GeoJSON().readFeatures(geojsonObject),
+	});
+	addLayer(map, "path", vectorSource);
+	majAffichageCouchePath(getLayerById(map, "path"));
+}
 
 
 

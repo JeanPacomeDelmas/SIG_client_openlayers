@@ -93812,7 +93812,10 @@ var mode;
 var etage; //variables pour la position
 
 var posIdPorte;
-var posEtage; //======= Styles
+var posEtage;
+var ok;
+var urlTestApiSpring = "http://192.168.1.38:8081/api/";
+var urlTestOpenLayers = "http://192.168.1.38:1234/"; //======= Styles
 
 var styleSalles = new _style.Style({
   stroke: new _style.Stroke({
@@ -93885,7 +93888,7 @@ var stylePath = new _style.Style({
 function setPositionWithUrl() {
   var url = location.href;
 
-  if (url.length > "http://localhost:1234/".length) //S'il y a des parametres
+  if (url.length > urlTestOpenLayers.length) //S'il y a des parametres
     {
       var parametres = url.split("/");
       var typePorte = parametres[3];
@@ -93894,7 +93897,7 @@ function setPositionWithUrl() {
       if (parametres.length > 5) ;
       coteEscalier = parametres[5];
       var urlFetch;
-      fetch("http://localhost:8081/api/" + typePorte + "/" + idPorte, {
+      fetch(urlTestApiSpring + typePorte + "/" + idPorte, {
         method: "GET",
         "headers": {
           'Access-Control-Allow-Origin': "*",
@@ -93937,9 +93940,9 @@ function getMilieuPorte(porte) {
 } //====== Initialisation de la map et des clics
 
 
-var urls = ["http://localhost:8081/api/salles", //Layer 0
-"http://localhost:8081/api/portes", //Layer 1
-"http://localhost:8081/api/escaliers" //Layer 2
+var urls = [urlTestApiSpring + "salles", //Layer 0
+urlTestApiSpring + "portes", //Layer 1
+urlTestApiSpring + "escaliers" //Layer 2
 ]; //On devrait plutot boucler sur les etages dans le cas de + d etages, et il faudrait aussi un appel escalier/etage/{idetage}
 
 var urlsFetchs = [];
@@ -94034,7 +94037,7 @@ function majAffichageSalle(salle) {
 } //====== Initialisation de la liste des etages
 
 
-fetch("http://localhost:8081/api/etages", {
+fetch(urlTestApiSpring + "etages", {
   "headers": {
     'Access-Control-Allow-Origin': "*",
     'Access-Control-Allow-Headers': "*"
@@ -94089,7 +94092,7 @@ function switchToEtage(numEtage) {
 } //====== Initialisation de la liste des fonctions des salles
 
 
-fetch("http://localhost:8081/api/fonction_salles", {
+fetch(urlTestApiSpring + "fonction_salles", {
   "headers": {
     'Access-Control-Allow-Origin': "*",
     'Access-Control-Allow-Headers': "*"
@@ -94134,7 +94137,7 @@ document.getElementById("buttonValiderModif").addEventListener("click", function
   // salle_selectionnee.get("nom") = document.getElementById("input_nom").value;
   // salle_selectionnee.get("fonction").get("nom") = document.getElementById("selectFonction").value;
   //salle_selectionnee est de type Feature, pas JSON. Pour eviter de devoir reecrire tout le JSON, je fais un appel a l'API
-  if (salle_selectionnee != null) fetch("http://localhost:8081/api/salle/" + salle_selectionnee.id_, {
+  if (salle_selectionnee != null) fetch(urlTestApiSpring + "salle/" + salle_selectionnee.id_, {
     "method": "GET",
     "headers": {
       "X-Requested-With": "XMLHttpRequest",
@@ -94148,7 +94151,7 @@ document.getElementById("buttonValiderModif").addEventListener("click", function
   }).then(function (salleJSON) {
     salleJSON.properties.nom = document.getElementById("input_nom").value;
     salleJSON.properties.fonction.nom = document.getElementById("selectFonction").value;
-    fetch("http://localhost:8081/api/salle/" + salle_selectionnee.id_, {
+    fetch(urlTestApiSpring + "salle/" + salle_selectionnee.id_, {
       "method": "PATCH",
       "headers": {
         "X-Requested-With": "XMLHttpRequest",
@@ -94240,14 +94243,12 @@ function setLayerPosition(map, x, y) {
 
 function majAffichageCouchePath(lay) {
   lay.getSource().getFeatures().forEach(function (feature) {
-    console.log(feature.getProperties());
     if (feature.get("etage")["id"] == numEtage) showFeature(feature, lay.get("id"));else hideFeature(feature, lay.get("id"));
   });
 }
 
 function callAPIPath(posIdPorte, idSalleDestination) {
-  console.log(posIdPorte, idSalleDestination);
-  if (posIdPorte != null && idSalleDestination != null) fetch("http://localhost:8081/api/trajet/porteDepart/" + posIdPorte + "/salle/" + idSalleDestination, //TODO
+  if (posIdPorte != null && idSalleDestination != null) fetch(urlTestApiSpring + "trajet/porteDepart/" + posIdPorte + "/salle/" + idSalleDestination, //TODO
   {
     "headers": {
       'Access-Control-Allow-Origin': "*",
@@ -94304,7 +94305,20 @@ function getStyleLayerById(idLayer) {
       return stylePath;
   }
 }
-},{"ol/ol.css":"node_modules/ol/ol.css","ol/Feature":"node_modules/ol/Feature.js","ol/format/GeoJSON":"node_modules/ol/format/GeoJSON.js","ol/Map":"node_modules/ol/Map.js","ol/View":"node_modules/ol/View.js","ol/source":"node_modules/ol/source.js","ol/layer":"node_modules/ol/layer.js","ol/style":"node_modules/ol/style.js","ol/interaction/Select":"node_modules/ol/interaction/Select.js","ol/events/condition":"node_modules/ol/events/condition.js","ol/geom/Point":"node_modules/ol/geom/Point.js"}],"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+
+function setLayerPath(map, listeLines) {
+  deleteLayer(map, "path");
+  var geojsonObject = {
+    'type': 'FeatureCollection',
+    'features': listeLines
+  };
+  var vectorSource = new _source.Vector({
+    features: new _GeoJSON.default().readFeatures(geojsonObject)
+  });
+  addLayer(map, "path", vectorSource);
+  majAffichageCouchePath(getLayerById(map, "path"));
+}
+},{"ol/ol.css":"node_modules/ol/ol.css","ol/Feature":"node_modules/ol/Feature.js","ol/format/GeoJSON":"node_modules/ol/format/GeoJSON.js","ol/Map":"node_modules/ol/Map.js","ol/View":"node_modules/ol/View.js","ol/source":"node_modules/ol/source.js","ol/layer":"node_modules/ol/layer.js","ol/style":"node_modules/ol/style.js","ol/interaction/Select":"node_modules/ol/interaction/Select.js","ol/events/condition":"node_modules/ol/events/condition.js","ol/geom/Point":"node_modules/ol/geom/Point.js"}],"../../../../../../AppData/Roaming/npm-cache/_npx/7188/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -94332,7 +94346,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50608" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51677" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
@@ -94508,5 +94522,5 @@ function hmrAcceptRun(bundle, id) {
     return true;
   }
 }
-},{}]},{},["../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/src/builtins/hmr-runtime.js","main.js"], null)
+},{}]},{},["../../../../../../AppData/Roaming/npm-cache/_npx/7188/node_modules/parcel/src/builtins/hmr-runtime.js","main.js"], null)
 //# sourceMappingURL=/main.1f19ae8e.js.map
