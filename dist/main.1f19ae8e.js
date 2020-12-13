@@ -94240,12 +94240,14 @@ function setLayerPosition(map, x, y) {
 
 function majAffichageCouchePath(lay) {
   lay.getSource().getFeatures().forEach(function (feature) {
+    console.log(feature.getProperties());
     if (feature.get("etage")["id"] == numEtage) showFeature(feature, lay.get("id"));else hideFeature(feature, lay.get("id"));
   });
 }
 
 function callAPIPath(posIdPorte, idSalleDestination) {
-  if (posIdPorte != null && idSalleDestination != null) fetch("http://localhost:8081/api/", //TODO
+  console.log(posIdPorte, idSalleDestination);
+  if (posIdPorte != null && idSalleDestination != null) fetch("http://localhost:8081/api/trajet/porteDepart/" + posIdPorte + "/salle/" + idSalleDestination, //TODO
   {
     "headers": {
       'Access-Control-Allow-Origin': "*",
