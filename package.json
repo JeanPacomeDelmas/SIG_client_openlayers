@@ -1,5 +1,5 @@
 {
-  "name": "geojson",
+  "name": "sig",
   "dependencies": {
     "ol": "^6.4.3"
   },

@@ -3,17 +3,23 @@ import Feature from 'ol/Feature';
 import GeoJSON from 'ol/format/GeoJSON';
 import Map from 'ol/Map';
 import View from 'ol/View';
-import {OSM, Vector as VectorSource} from 'ol/source';
+import {Vector as VectorSource} from 'ol/source';
 import {Tile as TileLayer, Vector as VectorLayer} from 'ol/layer';
 import {Circle as CircleStyle, Fill, Stroke, Style} from 'ol/style';
 import Select from 'ol/interaction/Select';
 import {altKeyOnly, click, pointerMove} from 'ol/events/condition';
+import Point from 'ol/geom/Point';
 
 //======= Declarations
-let listLayers = [];
+// layers : [salles, portes, escaliers, position, path]
 let map;
-let salle_selectionnee = "";
+let salle_selectionnee;
 let mode;
+let etage;
+//variables pour la position
+let posIdPorte;
+let posEtage;
+
 
 //======= Styles
 let styleSalles = new Style({ 
@@ -55,7 +61,7 @@ let stylePortes2 = new Style({
     }),
 }); 
 
-let styleEscalier = new Style({ 
+let styleEscaliers = new Style({ 
 	stroke: new Stroke({
       color: 'brown',
 	  lineDash: [4],
@@ -68,15 +74,17 @@ let styleEscalier = new Style({
 
 let stylePoint = new Style({
 	image: new CircleStyle({
-	  radius: 3,
-	  fill: null,
+	  radius: 5,
+	  fill: new Fill({
+			   color: 'red'
+			 }),
 	  stroke: new Stroke({color: 'red', width: 1}),
 	})
 });
 
 let stylePath = new Style({ 
 	stroke: new Stroke({
-      color: 'brown',
+      color: 'red',
 	  lineDash: [4],
       width: 2,
     }),
@@ -84,15 +92,67 @@ let stylePath = new Style({
       color: 'rgba(0, 0, 255, 0.1)',
     }),
 });
- 
+
+//====== Get position en fonction de l'URL
+function setPositionWithUrl()
+{
+	let url = location.href;
+	if (url.length > "http://localhost:1234/".length) //S'il y a des parametres
+	{
+		let parametres = url.split("/");
+		let typePorte = parametres[3];
+		let idPorte = parametres[4];
+		let coteEscalier;
+		
+		if (parametres.length>5);
+			coteEscalier = parametres[5];
+		let urlFetch;
+		fetch("http://localhost:8081/api/"+ typePorte +"/" + idPorte, 
+		{ method: "GET", "headers" : {
+			'Access-Control-Allow-Origin': "*",
+			'Access-Control-Allow-Headers': "*"}, "mode":"cors"}).then( response =>  response.json()).then(
+		r => {
+			let entree;
+			if (typePorte == "escalier")
+			{
+				if (coteEscalier == "bas")
+				{
+					posEtage = 1;
+					entree = r["sortieB"];
+				}
+				else if (coteEscalier == "haut")
+				{
+					posEtage = 2;
+					entree = r["sortieH"];
+				}
+			}
+			else 
+			{
+				entree = r.geometry;
+				posEtage = r.properties.etage.id;
+			}
+			let m = getMilieuPorte(entree);
+			setLayerPosition(map, m[0], m[1]);
+			switchToEtage(posEtage);
+			posIdPorte = idPorte;
+		})
+		.catch(e => console.log(e));
+	}
+}
+
+function getMilieuPorte(porte)
+{
+	let coords = porte["coordinates"];
+	let A = coords[0];
+	let B = coords[1];
+	return [(A[0]+B[0])/2, (A[1]+B[1])/2];
+}
 
 //====== Initialisation de la map et des clics
 let urls = [
-	"http://localhost:8081/api/salles/etage/1", //Layer 0
-	"http://localhost:8081/api/salles/etage/2", //Layer 1
-	"http://localhost:8081/api/portes/etage/1", //Layer 2
-	"http://localhost:8081/api/portes/etage/2", //Layer 3
-	"http://localhost:8081/api/escaliers" //Layer 4
+	"http://localhost:8081/api/salles", //Layer 0
+	"http://localhost:8081/api/portes", //Layer 1
+	"http://localhost:8081/api/escaliers" //Layer 2
 ]; //On devrait plutot boucler sur les etages dans le cas de + d etages, et il faudrait aussi un appel escalier/etage/{idetage}
 let urlsFetchs = [];
 urls.forEach(function(u) {
@@ -103,6 +163,7 @@ urls.forEach(function(u) {
 //Recuperer les salles, les portes et les escaliers
 Promise.all(urlsFetchs)
 .then(entities => {
+	let listLayers=[];
 	//Retour des formes sous json
 	entities.forEach(function(entity, i) {
 		let geojsonObject = {
@@ -113,22 +174,19 @@ Promise.all(urlsFetchs)
 		  features: new GeoJSON().readFeatures(geojsonObject),
 		});
 		
-		let style;
-		switch (i) //On devrait plutot boucler sur les etages dans le cas de + d etages
+		let c_id;
+		switch (i) //On devrait plutot boucler sur les etages dans le cas de + d etages, et creer des couleurs dynamiquement
 		{
-			case 0: style = styleSalles;
+			case 0: c_id = "salles";
 				break;
-			case 1: style = styleSalles2;
+			case 1: c_id = "portes";
 				break;
-			case 2: style = stylePortes;
-				break;
-			case 3: style = stylePortes2;
-				break;
-			case 4: style = styleEscalier;
+			case 2: c_id = "escaliers";
 				break;
 		}
+		let style = getStyleLayerById(c_id);
 		listLayers.push(new VectorLayer({
-			id: i,
+			id: c_id,
 			source: vectorSource,
 			style: style,
 		}));
@@ -144,34 +202,26 @@ Promise.all(urlsFetchs)
 	  })
 	});
 	
-	switchToEtage(1);
+	etage = 1;
+	switchToEtage(etage);
 	
 	//On écoute les clics
 	map.on('singleclick', function (evt) {
-		salle_selectionnee = "";
+		salle_selectionnee = null;
+		map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) { //Pour chaque salle sous le clic (normalement une seule)
+			salle_selectionnee = getSalleById(map, feature.id_);
+		});
 		majAffichageSalle(salle_selectionnee);
-		//Pour chaque salle sous le clic
-		map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) {
-			fetch("http://localhost:8081/api/salle/" + feature.id_, 
-			{ method: "GET", "headers" : {
-				'Access-Control-Allow-Origin': "*",
-				'Access-Control-Allow-Headers': "*"}, "mode":"cors"}).then( response =>  response.json()).then(
-			salle => {
-				salle_selectionnee = salle;
-				majAffichageSalle(salle_selectionnee);
-			})
-			.catch(e => console.log(e))
-			
-			if (mode == "editer")
-			{
-				
-			}
-		})
-		
+		if (mode=="pathfinding" && salle_selectionnee != null && posIdPorte != null)
+			callAPIPath(posIdPorte, salle_selectionnee.id_); 
 	});
 	//Selectionne visuellement une salle
 	map.removeInteraction(new Select());
 	map.addInteraction(new Select());
+	
+	addLayer(map, "position");
+	addLayer(map, "path");
+	setPositionWithUrl();
 })
 .catch(function(error) {
     console.log(error);
@@ -179,15 +229,15 @@ Promise.all(urlsFetchs)
 
 function majAffichageSalle(salle)
 {
-	if (salle == "") 
+	if (salle == null) 
 	{
 		document.getElementById('info_fonction').innerHTML = "";
 		document.getElementById('info_nom').innerHTML = "";
 	}
 	else
 	{
-		document.getElementById('info_fonction').innerHTML = salle.fonction.nom;
-		document.getElementById('info_nom').innerHTML = salle.nom;
+		document.getElementById('info_fonction').innerHTML = salle.get("fonction")["nom"];
+		document.getElementById('info_nom').innerHTML = salle.get("nom");
 	}
 	majAffichageFormEdit(mode, salle);
 }
@@ -203,36 +253,51 @@ fetch("http://localhost:8081/api/etages",
 .then(
 	etages => {
 		let selectEtage = document.getElementById("selectEtage");
-		etages.forEach(function(etage){
+		etages.forEach(function(eta){
 			let opt = document.createElement("option");
-			opt.value = etage.id;
-			opt.text = etage.nom;
+			opt.value = eta.id;
+			opt.text = eta.nom;
 			selectEtage.appendChild(opt);
 		});
 		
 		selectEtage.addEventListener("change", function(e) {
-			switchToEtage(selectEtage.value);
+			etage = selectEtage.value;
+			switchToEtage(etage);
 		});
 	})
 .catch(e => console.log(e))
 
 function switchToEtage(numEtage)
 {
-	listLayers.forEach(function(lay){
+	map.getLayers().forEach(function(lay){
 		switch (lay.get("id")) //On devrait plutot boucler sur les etages dans le cas de + d etages
 		{
-			case 0: lay.setVisible(numEtage==1);
+			case "portes": 
+			case "salles":
+				lay.getSource().getFeatures().forEach(function (feature) {
+					if (feature.get("etage")["id"]==numEtage)
+						showFeature(feature, lay.get("id"));
+					else
+						hideFeature(feature, lay.get("id"));
+				});
+				// lay.setVisible(numEtage==1);
 				break;
-			case 1: lay.setVisible(numEtage==2);
+			case "escaliers":
+				lay.getSource().getFeatures().forEach(function (feature) {
+					if (feature.get("etageB")["id"]==numEtage || feature.get("etageH")["id"]==numEtage)
+						showFeature(feature, lay.get("id"));
+					else
+						hideFeature(feature, lay.get("id"));
+				});
 				break;
-			case 2: lay.setVisible(numEtage==1);
+			case "position": lay.setVisible(numEtage==posEtage);
 				break;
-			case 3: lay.setVisible(numEtage==2);
+			case "path": 
+				majAffichageCouchePath(lay);
 				break;
-			// case 4: lay.setVisible(numEtage==1 || numEtage==2); //Inutile, sauf si + d etages 
-				// break; 
 		}
 	});
+	document.getElementById("selectEtage").value=numEtage;
 }
 
 
@@ -262,50 +327,211 @@ let selectMode = document.getElementById("selectMode");
 selectMode.addEventListener("change", function(e){
 	mode = selectMode.value;
 	majAffichageFormEdit(mode, salle_selectionnee)
+	if (mode=="pathfinding")
+	{
+		if (posIdPorte!=null)
+		{
+			if (salle_selectionnee != null)
+				callAPIPath(posIdPorte, salle_selectionnee.id_); 
+		}
+		else
+			alert("Scannez un QR-code pour définir votre position");
+	}
+	else
+		majAffichageCouchePath(getLayerById(map, "path"));		
 });
 
 function majAffichageFormEdit(mode, salle)
 {
-	if (mode != "editer" || salle == "")
+	if (mode != "editer" || salle == null)
 		document.getElementById("div_edit").style.display = "none";
 	else
 	{
 		document.getElementById("div_edit").style.display = "inline-block";
-		document.getElementById("input_nom").value = salle.nom;
-		document.getElementById("selectFonction").value = salle.fonction.nom;
+		document.getElementById("input_nom").value = salle.get("nom");
+		document.getElementById("selectFonction").value = salle.get("fonction")["nom"];
 	}
 }
 
 //====== Action edition d'une salle
 document.getElementById("buttonValiderModif").addEventListener("click", function (e) {
-	salle_selectionnee.nom = document.getElementById("input_nom").value;
-	salle_selectionnee.fonction.nom = document.getElementById("selectFonction").value;
-	fetch("http://localhost:8081/api/salle/" + salle_selectionnee.id, 
+	// salle_selectionnee.get("nom") = document.getElementById("input_nom").value;
+	// salle_selectionnee.get("fonction").get("nom") = document.getElementById("selectFonction").value;
+	//salle_selectionnee est de type Feature, pas JSON. Pour eviter de devoir reecrire tout le JSON, je fais un appel a l'API
+	if (salle_selectionnee!=null)
+	fetch("http://localhost:8081/api/salle/" + salle_selectionnee.id_, 
 	{
-		"method": "PATCH",
+		"method": "GET",
 		"headers" : {
 		"X-Requested-With": "XMLHttpRequest",
 		"Content-Type": "application/json",
 		'Access-Control-Allow-Origin': "*",
 		'Access-Control-Allow-Headers': "*"},
-		"mode":"cors",
-		"body": JSON.stringify(salle_selectionnee) 
-	}).then( function (r) { majAffichageSalle(salle_selectionnee); alert("Modification effectuee"); } )
-	.catch(e => console.log(e))
+		"mode":"cors"
+	}).then( response =>  response.json())
+	.then(
+		salleJSON => {
+			salleJSON.properties.nom = document.getElementById("input_nom").value;
+			salleJSON.properties.fonction.nom = document.getElementById("selectFonction").value;
+			fetch("http://localhost:8081/api/salle/" + salle_selectionnee.id_, 
+			{
+				"method": "PATCH",
+				"headers" : {
+				"X-Requested-With": "XMLHttpRequest",
+				"Content-Type": "application/json",
+				'Access-Control-Allow-Origin': "*",
+				'Access-Control-Allow-Headers': "*"},
+				"mode":"cors",
+				"body": JSON.stringify(salleJSON)
+			}).then( function (r) { alert("Modification effectuee"); document.location.reload(); } )
+			.catch(e => console.log(e))
+		}
+	)
+	.catch(e => console.log(e)) 	
 });
 
+function getSalleById(map, idSalle)
+{
+	let res = null;
+	getLayerById(map, "salles").getSource().getFeatures().forEach(function (feature) {
+		if (feature.id_==idSalle)
+			res = feature;
+	});
+	return res;
+}
 
-//====== Ajouter couche Localisation
-// let geojsonObject = {
-	// 'type': 'FeatureCollection',
-	// 'features' : [{}]
-// };
-// let vectorSource = new VectorSource({
-  // features: new GeoJSON().readFeatures(geojsonObject),
-// });
-// map.addLayer(vectorSource);
 
 
-// vectorSource.addFeature(new Feature(new Circle([5e6, 7e6], 1e6)));
+//====== Ajouter/Supprimer/Modifier couche
+function addLayer(map, id, vectorSource=null)
+{
+	if (vectorSource==null)
+	{
+		let geojsonObject = {
+			'type': 'FeatureCollection',
+			'features' : []
+		};
+		vectorSource = new VectorSource({
+		  features: new GeoJSON().readFeatures(geojsonObject),
+		});
+	}
+	let style;
+	if (id=="position") style = stylePoint;
+	else style = stylePath;
+	let layerPos = new VectorLayer({
+		id: id,
+		source: vectorSource,
+		style: style
+	})
+	map.addLayer(layerPos);
+}
+function deleteLayer(map, id)
+{
+	map.removeLayer(getLayerById(map, id));
+}
+function getLayerById(map, id)
+{
+	let res = null;
+	map.getLayers().forEach(function(lay){
+		if (lay.get("id") == id)
+			res = lay;
+	});
+	return res;
+}
+function clearLayerById(map, id)
+{
+	console.log("test");
+	map.getLayers().forEach(function(lay){
+		console.log(lay.get("id"));
+		if (lay.get("id") == id)
+		{
+			clearLayer(lay);
+			return;
+		}
+	});
+}
+function clearLayer(lay)
+{
+	lay.getSource().clear();
+}
+
+
+//====== Maj couche Localisation
+function setLayerPosition(map, x, y)
+{
+	let lay = getLayerById(map, "position");
+	lay.getSource().addFeature(
+		new Feature({
+		  geometry: new Point([x,y])
+		})
+	);
+}
+
+//====== Maj couche Path
+function majAffichageCouchePath(lay)
+{
+	lay.getSource().getFeatures().forEach(function (feature) {
+		if (feature.get("etage")["id"]==numEtage)
+			showFeature(feature, lay.get("id"));
+		else
+			hideFeature(feature, lay.get("id"));
+	});
+}
+
+function callAPIPath(posIdPorte, idSalleDestination)
+{
+	if (posIdPorte != null && idSalleDestination != null)
+	fetch("http://localhost:8081/api/", //TODO
+	{"headers" : {
+	'Access-Control-Allow-Origin': "*",
+	'Access-Control-Allow-Headers': "*"},
+	"mode":"cors"}
+	).then( 
+		response =>  response.json())
+	.then(
+		listeLines => {
+			setLayerPath(map, listeLines);
+		})
+	.catch(e => console.log(e))
+}
+
+function setLayerPath(map, listeLines)
+{
+	deleteLayer(map, "path");
+	let geojsonObject = {
+		'type': 'FeatureCollection',
+		'features' : listeLines
+	};
+	let vectorSource = new VectorSource({
+	  features: new GeoJSON().readFeatures(geojsonObject),
+	});
+	addLayer(map, "path", vectorSource);
+	majAffichageCouchePath(getLayerById(map, "path"));
+}
+
+//====== Feature 
+function hideFeature(feature, idLayer)
+{
+	feature.setStyle(new Style(null)); 
+}
+function showFeature(feature, idLayer)
+{
+	let style = getStyleLayerById(idLayer);
+	feature.setStyle(style); 
+}
+function getStyleLayerById(idLayer)
+{
+	switch (idLayer)
+	{
+		case "salles": return styleSalles;
+		case "portes": return stylePortes;
+		case "escaliers": return styleEscaliers;
+		case "position": return stylePoint;
+		case "path": return stylePath;
+	}
+}
+
+
+
 
 
