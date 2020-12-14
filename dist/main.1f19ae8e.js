@@ -93813,9 +93813,11 @@ var etage; //variables pour la position
 
 var posIdPorte;
 var posEtage;
-var ok;
-var urlTestApiSpring = "http://192.168.1.38:8081/api/";
-var urlTestOpenLayers = "http://192.168.1.38:1234/"; //======= Styles
+var ok; // let urlTestApiSpring = "http://192.168.1.38:8081/api/"
+// let urlTestOpenLayers = "http://192.168.1.38:1234/"
+
+var urlTestApiSpring = "http://localhost:8081/api/";
+var urlTestOpenLayers = "http://localhost:1234/"; //======= Styles
 
 var styleSalles = new _style.Style({
   stroke: new _style.Stroke({
@@ -94243,11 +94245,13 @@ function setLayerPosition(map, x, y) {
 
 function majAffichageCouchePath(lay) {
   lay.getSource().getFeatures().forEach(function (feature) {
-    if (feature.get("etage")["id"] == numEtage) showFeature(feature, lay.get("id"));else hideFeature(feature, lay.get("id"));
+    console.log(feature.getProperties());
+    if (feature.get("etage")["id"] == etage) showFeature(feature, lay.get("id"));else hideFeature(feature, lay.get("id"));
   });
 }
 
 function callAPIPath(posIdPorte, idSalleDestination) {
+  console.log(posIdPorte, idSalleDestination);
   if (posIdPorte != null && idSalleDestination != null) fetch(urlTestApiSpring + "trajet/porteDepart/" + posIdPorte + "/salle/" + idSalleDestination, //TODO
   {
     "headers": {
@@ -94258,10 +94262,26 @@ function callAPIPath(posIdPorte, idSalleDestination) {
   }).then(function (response) {
     return response.json();
   }).then(function (listeLines) {
+    listeLines = convertListeLines(listeLines);
     setLayerPath(map, listeLines);
   }).catch(function (e) {
     return console.log(e);
   });
+}
+
+function convertListeLines(listeLines) {
+  var res = [];
+  listeLines.forEach(function (line) {
+    res.push({
+      "type": "Feature",
+      "properties": line.properties,
+      "geometry": {
+        "type": "LineString",
+        "coordinates": line.coordinates
+      }
+    });
+  });
+  return res;
 }
 
 function setLayerPath(map, listeLines) {
