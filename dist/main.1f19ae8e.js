@@ -117,7 +117,7 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/src/builtins/bundle-url.js":[function(require,module,exports) {
+})({"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/src/builtins/bundle-url.js":[function(require,module,exports) {
 var bundleURL = null;
 
 function getBundleURLCached() {
@@ -149,7 +149,7 @@ function getBaseURL(url) {
 
 exports.getBundleURL = getBundleURLCached;
 exports.getBaseURL = getBaseURL;
-},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/src/builtins/css-loader.js":[function(require,module,exports) {
+},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/src/builtins/css-loader.js":[function(require,module,exports) {
 var bundle = require('./bundle-url');
 
 function updateLink(link) {
@@ -184,13 +184,13 @@ function reloadCSS() {
 }
 
 module.exports = reloadCSS;
-},{"./bundle-url":"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/src/builtins/bundle-url.js"}],"node_modules/ol/ol.css":[function(require,module,exports) {
+},{"./bundle-url":"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/src/builtins/bundle-url.js"}],"node_modules/ol/ol.css":[function(require,module,exports) {
 
         var reloadCSS = require('_css_loader');
         module.hot.dispose(reloadCSS);
         module.hot.accept(reloadCSS);
       
-},{"_css_loader":"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/src/builtins/css-loader.js"}],"node_modules/ol/events/Event.js":[function(require,module,exports) {
+},{"_css_loader":"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/src/builtins/css-loader.js"}],"node_modules/ol/events/Event.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -72638,7 +72638,7 @@ module.exports = function(fonts, size, lineHeight) {
   return cssData[0] + sp + cssData[1] + sp + size + 'px' + (lineHeight ? '/' + lineHeight : '') + sp + cssData[2];
 };
 
-},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/node_modules/base64-js/index.js":[function(require,module,exports) {
+},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/node_modules/base64-js/index.js":[function(require,module,exports) {
 'use strict'
 
 exports.byteLength = byteLength
@@ -72790,7 +72790,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/node_modules/ieee754/index.js":[function(require,module,exports) {
+},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/node_modules/ieee754/index.js":[function(require,module,exports) {
 /*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
@@ -72877,14 +72877,14 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/node_modules/isarray/index.js":[function(require,module,exports) {
+},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/node_modules/isarray/index.js":[function(require,module,exports) {
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/node_modules/buffer/index.js":[function(require,module,exports) {
+},{}],"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/node_modules/buffer/index.js":[function(require,module,exports) {
 
 var global = arguments[3];
 /*!
@@ -74677,7 +74677,7 @@ function isnan (val) {
   return val !== val // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/node_modules/base64-js/index.js","ieee754":"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/node_modules/ieee754/index.js","isarray":"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/node_modules/isarray/index.js","buffer":"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/node_modules/buffer/index.js"}],"node_modules/@mapbox/mapbox-gl-style-spec/dist/index.es.js":[function(require,module,exports) {
+},{"base64-js":"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/node_modules/base64-js/index.js","ieee754":"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/node_modules/ieee754/index.js","isarray":"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/node_modules/isarray/index.js","buffer":"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/node_modules/buffer/index.js"}],"node_modules/@mapbox/mapbox-gl-style-spec/dist/index.es.js":[function(require,module,exports) {
 var global = arguments[3];
 var Buffer = require("buffer").Buffer;
 "use strict";
@@ -89374,7 +89374,7 @@ const visit = {
 exports.visit = visit;
 validateStyle.parsed = validateStyle;
 validateStyle.latest = validateStyle;
-},{"buffer":"../../../../../../AppData/Roaming/npm-cache/_npx/1732/node_modules/parcel/node_modules/buffer/index.js"}],"node_modules/ol-mapbox-style/dist/util.js":[function(require,module,exports) {
+},{"buffer":"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/node_modules/buffer/index.js"}],"node_modules/ol-mapbox-style/dist/util.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -93813,6 +93813,8 @@ var etage; //variables pour la position
 
 var posIdPorte;
 var posEtage;
+var posSalle1;
+var posSalle2;
 var ok; // let urlTestApiSpring = "http://192.168.1.38:8081/api/"
 // let urlTestOpenLayers = "http://192.168.1.38:1234/"
 
@@ -93919,9 +93921,14 @@ function setPositionWithUrl() {
             posEtage = 2;
             entree = r["sortieH"];
           }
+
+          posSalle1 = r.salleB;
+          posSalle2 = r.salleH;
         } else {
           entree = r.geometry;
           posEtage = r.properties.etage.id;
+          posSalle1 = r.salle1;
+          posSalle2 = r.salle2;
         }
 
         var m = getMilieuPorte(entree);
@@ -94014,7 +94021,7 @@ Promise.all(urlsFetchs).then(function (entities) {
       salle_selectionnee = getSalleById(map, feature.id_);
     });
     majAffichageSalle(salle_selectionnee);
-    if (mode == "pathfinding" && salle_selectionnee != null && posIdPorte != null) callAPIPath(posIdPorte, salle_selectionnee.id_);
+    if (mode == "pathfinding" && salle_selectionnee != null && posIdPorte != null) callAPIPath(posIdPorte, salle_selectionnee);
   }); //Selectionne visuellement une salle
 
   map.removeInteraction(new _Select.default());
@@ -94121,7 +94128,7 @@ selectMode.addEventListener("change", function (e) {
 
   if (mode == "pathfinding") {
     if (posIdPorte != null) {
-      if (salle_selectionnee != null) callAPIPath(posIdPorte, salle_selectionnee.id_);
+      if (salle_selectionnee != null) callAPIPath(posIdPorte, salle_selectionnee);
     } else alert("Scannez un QR-code pour définir votre position");
   } else majAffichageCouchePath(getLayerById(map, "path"));
 });
@@ -94219,10 +94226,7 @@ function getLayerById(map, id) {
 }
 
 function clearLayerById(map, id) {
-  console.log("test");
   map.getLayers().forEach(function (lay) {
-    console.log(lay.get("id"));
-
     if (lay.get("id") == id) {
       clearLayer(lay);
       return;
@@ -94245,15 +94249,19 @@ function setLayerPosition(map, x, y) {
 
 function majAffichageCouchePath(lay) {
   lay.getSource().getFeatures().forEach(function (feature) {
-    console.log(feature.getProperties());
     if (feature.get("etage")["id"] == etage) showFeature(feature, lay.get("id"));else hideFeature(feature, lay.get("id"));
   });
 }
 
-function callAPIPath(posIdPorte, idSalleDestination) {
-  console.log(posIdPorte, idSalleDestination);
-  if (posIdPorte != null && idSalleDestination != null) fetch(urlTestApiSpring + "trajet/porteDepart/" + posIdPorte + "/salle/" + idSalleDestination, //TODO
-  {
+function callAPIPath(idPorte, salleDestination) {
+  var idSalleDestination = salleDestination.id_;
+
+  if (salleDestination.getProperties()["fonction"]["nom"] == "couloir" || posSalle1.id == idSalleDestination || posSalle2.id == idSalleDestination) {
+    setLayerPath(map, []);
+    return;
+  }
+
+  if (idPorte != null && idSalleDestination != null) fetch(urlTestApiSpring + "trajet/porteDepart/" + idPorte + "/salle/" + idSalleDestination, {
     "headers": {
       'Access-Control-Allow-Origin': "*",
       'Access-Control-Allow-Headers': "*"
@@ -94338,7 +94346,7 @@ function setLayerPath(map, listeLines) {
   addLayer(map, "path", vectorSource);
   majAffichageCouchePath(getLayerById(map, "path"));
 }
-},{"ol/ol.css":"node_modules/ol/ol.css","ol/Feature":"node_modules/ol/Feature.js","ol/format/GeoJSON":"node_modules/ol/format/GeoJSON.js","ol/Map":"node_modules/ol/Map.js","ol/View":"node_modules/ol/View.js","ol/source":"node_modules/ol/source.js","ol/layer":"node_modules/ol/layer.js","ol/style":"node_modules/ol/style.js","ol/interaction/Select":"node_modules/ol/interaction/Select.js","ol/events/condition":"node_modules/ol/events/condition.js","ol/geom/Point":"node_modules/ol/geom/Point.js"}],"../../../../../../AppData/Roaming/npm-cache/_npx/7188/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"ol/ol.css":"node_modules/ol/ol.css","ol/Feature":"node_modules/ol/Feature.js","ol/format/GeoJSON":"node_modules/ol/format/GeoJSON.js","ol/Map":"node_modules/ol/Map.js","ol/View":"node_modules/ol/View.js","ol/source":"node_modules/ol/source.js","ol/layer":"node_modules/ol/layer.js","ol/style":"node_modules/ol/style.js","ol/interaction/Select":"node_modules/ol/interaction/Select.js","ol/events/condition":"node_modules/ol/events/condition.js","ol/geom/Point":"node_modules/ol/geom/Point.js"}],"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -94366,7 +94374,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51677" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58944" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
@@ -94542,5 +94550,5 @@ function hmrAcceptRun(bundle, id) {
     return true;
   }
 }
-},{}]},{},["../../../../../../AppData/Roaming/npm-cache/_npx/7188/node_modules/parcel/src/builtins/hmr-runtime.js","main.js"], null)
+},{}]},{},["../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/src/builtins/hmr-runtime.js","main.js"], null)
 //# sourceMappingURL=/main.1f19ae8e.js.map

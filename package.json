@@ -1,7 +1,8 @@
 {
   "name": "sig",
   "dependencies": {
-    "ol": "^6.4.3"
+    "ol": "^6.4.3",
+    "styles.js": "^0.1.1"
   },
   "devDependencies": {
     "parcel": "1.11.0"

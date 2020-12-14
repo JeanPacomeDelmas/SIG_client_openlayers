@@ -19,6 +19,8 @@ let etage;
 //variables pour la position
 let posIdPorte;
 let posEtage;
+let posSalle1;
+let posSalle2;
 let ok;
 // let urlTestApiSpring = "http://192.168.1.38:8081/api/"
 // let urlTestOpenLayers = "http://192.168.1.38:1234/"
@@ -129,11 +131,15 @@ function setPositionWithUrl()
 					posEtage = 2;
 					entree = r["sortieH"];
 				}
+				posSalle1 = r.salleB;
+				posSalle2 = r.salleH;
 			}
 			else 
 			{
 				entree = r.geometry;
 				posEtage = r.properties.etage.id;
+				posSalle1 = r.salle1;
+				posSalle2 = r.salle2;
 			}
 			let m = getMilieuPorte(entree);
 			setLayerPosition(map, m[0], m[1]);
@@ -217,7 +223,7 @@ Promise.all(urlsFetchs)
 		});
 		majAffichageSalle(salle_selectionnee);
 		if (mode=="pathfinding" && salle_selectionnee != null && posIdPorte != null)
-			callAPIPath(posIdPorte, salle_selectionnee.id_); 
+			callAPIPath(posIdPorte, salle_selectionnee); 
 	});
 	//Selectionne visuellement une salle
 	map.removeInteraction(new Select());
@@ -336,7 +342,7 @@ selectMode.addEventListener("change", function(e){
 		if (posIdPorte!=null)
 		{
 			if (salle_selectionnee != null)
-				callAPIPath(posIdPorte, salle_selectionnee.id_); 
+				callAPIPath(posIdPorte, salle_selectionnee); 
 		}
 		else
 			alert("Scannez un QR-code pour définir votre position");
@@ -443,9 +449,7 @@ function getLayerById(map, id)
 }
 function clearLayerById(map, id)
 {
-	console.log("test");
 	map.getLayers().forEach(function(lay){
-		console.log(lay.get("id"));
 		if (lay.get("id") == id)
 		{
 			clearLayer(lay);
@@ -473,9 +477,7 @@ function setLayerPosition(map, x, y)
 //====== Maj couche Path
 function majAffichageCouchePath(lay)
 {
-	
 	lay.getSource().getFeatures().forEach(function (feature) {
-		console.log(feature.getProperties());
 		if (feature.get("etage")["id"]==etage)
 			showFeature(feature, lay.get("id"));
 		else
@@ -483,11 +485,16 @@ function majAffichageCouchePath(lay)
 	});
 }
 
-function callAPIPath(posIdPorte, idSalleDestination)
+function callAPIPath(idPorte, salleDestination)
 {
-	console.log(posIdPorte, idSalleDestination);
-	if (posIdPorte != null && idSalleDestination != null)
-	fetch(urlTestApiSpring + "trajet/porteDepart/"+posIdPorte+"/salle/"+idSalleDestination, //TODO
+	let idSalleDestination = salleDestination.id_;
+	if (salleDestination.getProperties()["fonction"]["nom"] == "couloir" || posSalle1.id == idSalleDestination || posSalle2.id == idSalleDestination)
+	{
+		setLayerPath(map, []);
+		return;
+	}
+	if (idPorte != null && idSalleDestination != null)
+	fetch(urlTestApiSpring + "trajet/porteDepart/"+idPorte+"/salle/"+idSalleDestination, 
 	{"headers" : {
 	'Access-Control-Allow-Origin': "*",
 	'Access-Control-Allow-Headers': "*"},
@@ -498,7 +505,6 @@ function callAPIPath(posIdPorte, idSalleDestination)
 		listeLines => {
 			listeLines = convertListeLines(listeLines);
 			setLayerPath(map, listeLines);
-			
 		})
 	.catch(e => console.log(e))
 }
