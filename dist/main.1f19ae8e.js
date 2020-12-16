@@ -93821,14 +93821,13 @@ var nomUser; //variables pour la position
 
 var posX;
 var posY;
-var posIdPorte;
 var posEtage;
 var posIdSalle1;
-var posIdSalle2; // let urlTestApiSpring = "http://192.168.1.95:8081/api/";
-// let urlTestOpenLayers = "http://192.168.1.95:1234/";
-
-var urlTestApiSpring = "http://localhost:8081/api/";
-var urlTestOpenLayers = "http://localhost:1234/"; //======= Styles
+var posIdSalle2;
+var urlTestApiSpring = "http://192.168.1.95:8081/api/";
+var urlTestOpenLayers = "http://192.168.1.95:1234/"; // let urlTestApiSpring = "http://localhost:8081/api/";
+// let urlTestOpenLayers = "http://localhost:1234/";
+//======= Styles
 
 var styleSalles = new _style.Style({
   stroke: new _style.Stroke({
@@ -93957,15 +93956,14 @@ function setPositionWithUrl() {
             return response.json();
           }).then(function (r) {
             var entree;
-            console.log(typePorte);
 
             if (typePorte == "escalier") {
               if (coteEscalier == "bas") {
-                posEtage = 1;
-                entree = r["sortieB"];
+                posEtage = r.sortieB.properties.etage.id;
+                entree = r.sortieB;
               } else if (coteEscalier == "haut") {
-                posEtage = 2;
-                entree = r["sortieH"];
+                posEtage = r.sortieH.properties.etage.id;
+                entree = r.sortieH;
               }
 
               posIdSalle1 = r.salleB.id;
@@ -93978,10 +93976,11 @@ function setPositionWithUrl() {
             }
 
             var m = getMilieuPorte(entree);
-            setLayerPosition(map, m[0], m[1]);
+            posX = m[0];
+            posY = m[1];
+            setLayerPosition(map, posX, posY);
             switchToEtage(posEtage);
-            posIdPorte = idPorte;
-            callAPISavePosUser(m[0], m[1]);
+            callAPISavePosUser(posX, posY);
           }).catch(function (e) {
             return console.log(e);
           });
@@ -94140,7 +94139,7 @@ Promise.all(urlsFetchs).then(function (entities) {
           salle_selectionnee = getSalleById(map, feature.id_);
         });
         majAffichageSalle(salle_selectionnee);
-        if (mode == "pathfinding" && salle_selectionnee != null) callAPIPath(posIdPorte, salle_selectionnee);
+        if (mode == "pathfinding" && salle_selectionnee != null) callAPIPath(salle_selectionnee);
       });
       map.removeInteraction(new _Select.default()); //Supprime les selections des qu on fait un clic
 
@@ -94163,8 +94162,7 @@ Promise.all(urlsFetchs).then(function (entities) {
       map.on('singleclick', function (evt) {
         var x = Math.round(10 * evt.coordinate[0]) / 10; //pipe 0 means troncature a l unite
 
-        var y = Math.round(10 * evt.coordinate[1]) / 10;
-        console.log(x, y); // verifier x et y bien dans la map
+        var y = Math.round(10 * evt.coordinate[1]) / 10; // verifier x et y bien dans la map
 
         fetch(urlTestApiSpring + "salle/point/" + x + "/" + y + "/etage/" + etage, {
           method: "GET",
@@ -94258,6 +94256,7 @@ fetch(urlTestApiSpring + "etages", {
 });
 
 function switchToEtage(numEtage) {
+  etage = numEtage;
   map.getLayers().forEach(function (lay) {
     switch (lay.get("id")) {
       //On devrait plutot boucler sur les etages dans le cas de + d etages
@@ -94277,6 +94276,7 @@ function switchToEtage(numEtage) {
         break;
 
       case "path":
+      case "allPositions":
         majAffichageCouche(lay);
         break;
     }
@@ -94316,8 +94316,8 @@ selectMode.addEventListener("change", function (e) {
   majAffichageFormEdit(mode, salle_selectionnee);
 
   if (mode == "pathfinding") {
-    if (posIdPorte != null || posX != null && posY != null) {
-      if (salle_selectionnee != null) callAPIPath(posIdPorte, salle_selectionnee);
+    if (posX != null && posY != null) {
+      if (salle_selectionnee != null) callAPIPath(salle_selectionnee);
     } else alert("Scannez un QR-code pour définir votre position");
   } else majAffichageCouche(getLayerById(map, "path"));
 
@@ -94443,7 +94443,8 @@ function setLayerPosition(map, x, y) {
 } //====== Couche Path
 
 
-function callAPIPath(idPorte, salleDestination) {
+function callAPIPath(salleDestination) {
+  if (posX == null || posY == null) return;
   var idSalleDestination = salleDestination.id_;
 
   if (salleDestination.getProperties()["fonction"]["nom"] == "couloir" || posIdSalle1 == idSalleDestination || posIdSalle2 == idSalleDestination) //Si on ne clique pas dans un couloir, ni une salle adjacente a la porte sur laquelle on se trouve, ni la salle dans laquelle on est
@@ -94453,9 +94454,7 @@ function callAPIPath(idPorte, salleDestination) {
       return;
     }
 
-  var urlFetch;
-  if (idPorte != null && idSalleDestination != null) //On peut demander la liste des lignes pour tracer le path entre la porte et la salle
-    urlFetch = urlTestApiSpring + "trajet/porteDepart/" + idPorte + "/salle/" + idSalleDestination;else if (posX != null && posY != null && idSalleDestination != null) urlFetch = urlTestApiSpring + "trajet/position/" + posX + "/" + posY + "/etage/" + posEtage + "/salle/" + idSalleDestination; //trajet/position/{x}/{y}/etage/{idEtage}/salle/{idSalle}
+  var urlFetch = urlTestApiSpring + "trajet/position/" + posX + "/" + posY + "/etage/" + posEtage + "/salle/" + idSalleDestination; //trajet/position/{x}/{y}/etage/{idEtage}/salle/{idSalle}
 
   fetch(urlFetch, {
     "headers": {
