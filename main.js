@@ -28,8 +28,8 @@ let posIdPorte;
 let posEtage;
 let posIdSalle1;
 let posIdSalle2;
-// let urlTestApiSpring = "http://192.168.1.38:8081/api/";
-// let urlTestOpenLayers = "http://192.168.1.38:1234/";
+// let urlTestApiSpring = "http://192.168.1.95:8081/api/";
+// let urlTestOpenLayers = "http://192.168.1.95:1234/";
 let urlTestApiSpring = "http://localhost:8081/api/";
 let urlTestOpenLayers = "http://localhost:1234/";
 
@@ -158,6 +158,7 @@ function setPositionWithUrl()
 				'Access-Control-Allow-Headers': "*"}, "mode":"cors"}).then( response =>  response.json()).then(
 			r => {
 				let entree;
+				console.log(typePorte);
 				if (typePorte == "escalier")
 				{
 					if (coteEscalier == "bas")
@@ -173,7 +174,7 @@ function setPositionWithUrl()
 					posIdSalle1 = r.salleB.id;
 					posIdSalle2 = r.salleH.id;
 				}
-				else (typePorte == "porte")
+				else if (typePorte == "porte")
 				{
 					entree = r.geometry;
 					posEtage = r.properties.etage.id;

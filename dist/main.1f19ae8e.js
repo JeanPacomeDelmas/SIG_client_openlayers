@@ -93824,8 +93824,8 @@ var posY;
 var posIdPorte;
 var posEtage;
 var posIdSalle1;
-var posIdSalle2; // let urlTestApiSpring = "http://192.168.1.38:8081/api/";
-// let urlTestOpenLayers = "http://192.168.1.38:1234/";
+var posIdSalle2; // let urlTestApiSpring = "http://192.168.1.95:8081/api/";
+// let urlTestOpenLayers = "http://192.168.1.95:1234/";
 
 var urlTestApiSpring = "http://localhost:8081/api/";
 var urlTestOpenLayers = "http://localhost:1234/"; //======= Styles
@@ -93957,6 +93957,7 @@ function setPositionWithUrl() {
             return response.json();
           }).then(function (r) {
             var entree;
+            console.log(typePorte);
 
             if (typePorte == "escalier") {
               if (coteEscalier == "bas") {
@@ -93969,14 +93970,13 @@ function setPositionWithUrl() {
 
               posIdSalle1 = r.salleB.id;
               posIdSalle2 = r.salleH.id;
-            } else typePorte == "porte";
-
-            {
+            } else if (typePorte == "porte") {
               entree = r.geometry;
               posEtage = r.properties.etage.id;
               posIdSalle1 = r.salle1.id;
               posIdSalle2 = r.salle2.id;
             }
+
             var m = getMilieuPorte(entree);
             setLayerPosition(map, m[0], m[1]);
             switchToEtage(posEtage);
@@ -94572,7 +94572,7 @@ function setLayerPath(map, listeLines) {
   addLayer(map, "path", vectorSource);
   majAffichageCouche(getLayerById(map, "path"));
 }
-},{"ol/ol.css":"node_modules/ol/ol.css","ol/Feature":"node_modules/ol/Feature.js","ol/format/GeoJSON":"node_modules/ol/format/GeoJSON.js","ol/Map":"node_modules/ol/Map.js","ol/View":"node_modules/ol/View.js","ol/source":"node_modules/ol/source.js","ol/layer":"node_modules/ol/layer.js","ol/style":"node_modules/ol/style.js","ol/interaction/Select":"node_modules/ol/interaction/Select.js","ol/events/condition":"node_modules/ol/events/condition.js","ol/geom/Point":"node_modules/ol/geom/Point.js","ol/interaction/Draw":"node_modules/ol/interaction/Draw.js","ol/proj":"node_modules/ol/proj.js"}],"../../../../../../AppData/Roaming/npm-cache/_npx/17164/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"ol/ol.css":"node_modules/ol/ol.css","ol/Feature":"node_modules/ol/Feature.js","ol/format/GeoJSON":"node_modules/ol/format/GeoJSON.js","ol/Map":"node_modules/ol/Map.js","ol/View":"node_modules/ol/View.js","ol/source":"node_modules/ol/source.js","ol/layer":"node_modules/ol/layer.js","ol/style":"node_modules/ol/style.js","ol/interaction/Select":"node_modules/ol/interaction/Select.js","ol/events/condition":"node_modules/ol/events/condition.js","ol/geom/Point":"node_modules/ol/geom/Point.js","ol/interaction/Draw":"node_modules/ol/interaction/Draw.js","ol/proj":"node_modules/ol/proj.js"}],"../../../../../../AppData/Roaming/npm-cache/_npx/15356/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -94600,7 +94600,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54662" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54449" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
@@ -94776,5 +94776,5 @@ function hmrAcceptRun(bundle, id) {
     return true;
   }
 }
-},{}]},{},["../../../../../../AppData/Roaming/npm-cache/_npx/17164/node_modules/parcel/src/builtins/hmr-runtime.js","main.js"], null)
+},{}]},{},["../../../../../../AppData/Roaming/npm-cache/_npx/15356/node_modules/parcel/src/builtins/hmr-runtime.js","main.js"], null)
 //# sourceMappingURL=/main.1f19ae8e.js.map
