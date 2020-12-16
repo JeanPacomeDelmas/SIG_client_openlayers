@@ -18,48 +18,54 @@
 	<select id="selectEtage"></select>
 	
 	<br>
-	<label>Salle :</label>
-	<table>
-		<tbody>
-			<tr>
-				<td>Fonction :</td>
-				<td id="info_fonction"></td>
-			</tr>
-			<tr>
-				<td>Nom :</td>
-				<td id="info_nom"></td>
-			</tr>
-		</tbody>
-	</table>
 	
-	<br>
-	<br>
-	
-	<label>Mode de sélection</label>
-	<select id="selectMode">
-		<option value="consulter" selected="">Consulter</option>
-		<option value="editer">Editer</option>
-		<option value="pathfinding">Trouver son chemin</option>
-	</select>
-	<br><br>
-	<div id="div_edit" style="display: none;">
+	<div id="div_normale">
+		<label>Salle :</label>
 		<table>
-		<tbody>
-			<tr>
-				<td><label>Nouveau nom de la salle :</label></td>
-				<td><input id="input_nom" type="text"><br></td>
-			</tr>
-			<tr>
-				<td><label>Nouvelle fonction :</label></td>
-				<td><select id="selectFonction"></select><br></td>
-			</tr>
-		</tbody>
-	</table>
-	<button id="buttonValiderModif">Valider</button>
+			<tbody>
+				<tr>
+					<td>Fonction :</td>
+					<td id="info_fonction"></td>
+				</tr>
+				<tr>
+					<td>Nom :</td>
+					<td id="info_nom"></td>
+				</tr>
+			</tbody>
+		</table>
+		
+		<br>
+		<br>
+		
+		<label>Mode de sélection</label>
+		<select id="selectMode">
+			<option value="consulter" selected="">Consulter</option>
+			<option value="editer">Editer</option>
+			<option value="pathfinding">Trouver son chemin</option>
+			<option value="seeAllUser">Voir les dernières positions des autres utilisateurs</option>
+		</select>
+		<br><br>
+		<div id="div_edit" style="display: none;">
+			<table>
+			<tbody>
+				<tr>
+					<td><label>Nouveau nom de la salle :</label></td>
+					<td><input id="input_nom" type="text"><br></td>
+				</tr>
+				<tr>
+					<td><label>Nouvelle fonction :</label></td>
+					<td><select id="selectFonction"></select><br></td>
+				</tr>
+			</tbody>
+		</table>
+		<button id="buttonValiderModif">Valider</button>
+		</div>
 	</div>
 	
-	<script src="/styles.3aa8913d.js" type="text/javascript"></script>
-
+	<div id="div_demande_pos" style="display : none;">
+		<p>Vous souhaitez ajouter un nouveau QR-Code, pointez sa position sur la carte.</p>
+	</div>
+	
     <script src="/main.1f19ae8e.js" type="text/javascript"></script>
     
   </body>

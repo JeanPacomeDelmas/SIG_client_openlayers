@@ -9,23 +9,29 @@ import {Circle as CircleStyle, Fill, Stroke, Style} from 'ol/style';
 import Select from 'ol/interaction/Select';
 import {altKeyOnly, click, pointerMove} from 'ol/events/condition';
 import Point from 'ol/geom/Point';
+import Draw from 'ol/interaction/Draw';
+import { transform } from 'ol/proj';
 
 //======= Declarations
-// layers : [salles, portes, escaliers, position, path]
+// layers : [salles, portes, escaliers, position, path, allPositions]
 let map;
 let salle_selectionnee;
 let mode;
 let etage;
+let demandePos = false; //true si on doit demander la position a l'utilisateur pour ajouter un qrCode
+let newqrcode;
+let nomUser;
 //variables pour la position
+let posX;
+let posY;
 let posIdPorte;
 let posEtage;
-let posSalle1;
-let posSalle2;
-let ok;
-// let urlTestApiSpring = "http://192.168.1.38:8081/api/"
-// let urlTestOpenLayers = "http://192.168.1.38:1234/"
-let urlTestApiSpring = "http://localhost:8081/api/"
-let urlTestOpenLayers = "http://localhost:1234/"
+let posIdSalle1;
+let posIdSalle2;
+// let urlTestApiSpring = "http://192.168.1.38:8081/api/";
+// let urlTestOpenLayers = "http://192.168.1.38:1234/";
+let urlTestApiSpring = "http://localhost:8081/api/";
+let urlTestOpenLayers = "http://localhost:1234/";
 
 //======= Styles
 let styleSalles = new Style({ 
@@ -99,6 +105,37 @@ let stylePath = new Style({
     }),
 });
 
+let stylePoint2 = new Style({
+	image: new CircleStyle({
+	  radius: 5,
+	  fill: new Fill({
+			   color: 'lightBlue'
+			 }),
+	  stroke: new Stroke({color: 'blue', width: 1}),
+	})
+});
+
+//====== Read URL to know if asking user position
+let url = location.href; 
+//peut etre .../nom/escalier/1/bas
+//peut etre .../nom/porte/1
+//peut etre .../nom/addqrc/leqrcode //Ici on ne regarde que celui-la, les autres sont dans la fonction setPositionWithUrl()
+//peut etre .../nom/leqrcode
+if (url.length > urlTestOpenLayers.length) //S'il y a des parametres
+{
+	let parametres = url.split("/");
+	nomUser = parametres[3];
+	let demande = parametres[4];
+	if (demande == "addqrc")
+	{
+		demandePos = true;
+		newqrcode = parametres[4];
+		//On demande la position a l'utilisateur
+		document.getElementById("div_normale").style.display = "none";
+		document.getElementById("div_demande_pos").style.display = "inline-block";
+	}
+}
+
 //====== Get position en fonction de l'URL
 function setPositionWithUrl()
 {
@@ -106,48 +143,87 @@ function setPositionWithUrl()
 	if (url.length > urlTestOpenLayers.length) //S'il y a des parametres
 	{
 		let parametres = url.split("/");
-		let typePorte = parametres[3];
-		let idPorte = parametres[4];
+		let typePorte = parametres[4];
+		let idPorte = parametres[5];
 		let coteEscalier;
 		
-		if (parametres.length>5);
-			coteEscalier = parametres[5];
-		let urlFetch;
-		fetch(urlTestApiSpring+ typePorte +"/" + idPorte, 
-		{ method: "GET", "headers" : {
-			'Access-Control-Allow-Origin': "*",
-			'Access-Control-Allow-Headers': "*"}, "mode":"cors"}).then( response =>  response.json()).then(
-		r => {
-			let entree;
-			if (typePorte == "escalier")
-			{
-				if (coteEscalier == "bas")
+		if (parametres.length>6);
+			coteEscalier = parametres[6];
+			
+		if (typePorte == "escalier" || typePorte == "porte") //Si on a l'URL .../escalier/1/bas ou .../porte/1
+		{
+			fetch(urlTestApiSpring+ typePorte +"/" + idPorte, 
+			{ method: "GET", "headers" : {
+				'Access-Control-Allow-Origin': "*",
+				'Access-Control-Allow-Headers': "*"}, "mode":"cors"}).then( response =>  response.json()).then(
+			r => {
+				let entree;
+				if (typePorte == "escalier")
 				{
-					posEtage = 1;
-					entree = r["sortieB"];
+					if (coteEscalier == "bas")
+					{
+						posEtage = 1;
+						entree = r["sortieB"];
+					}
+					else if (coteEscalier == "haut")
+					{
+						posEtage = 2;
+						entree = r["sortieH"];
+					}
+					posIdSalle1 = r.salleB.id;
+					posIdSalle2 = r.salleH.id;
 				}
-				else if (coteEscalier == "haut")
+				else (typePorte == "porte")
 				{
-					posEtage = 2;
-					entree = r["sortieH"];
+					entree = r.geometry;
+					posEtage = r.properties.etage.id;
+					posIdSalle1 = r.salle1.id;
+					posIdSalle2 = r.salle2.id;
 				}
-				posSalle1 = r.salleB;
-				posSalle2 = r.salleH;
-			}
-			else 
-			{
-				entree = r.geometry;
-				posEtage = r.properties.etage.id;
-				posSalle1 = r.salle1;
-				posSalle2 = r.salle2;
-			}
-			let m = getMilieuPorte(entree);
-			setLayerPosition(map, m[0], m[1]);
-			switchToEtage(posEtage);
-			posIdPorte = idPorte;
-		})
-		.catch(e => console.log(e));
+				let m = getMilieuPorte(entree);
+				setLayerPosition(map, m[0], m[1]);
+				switchToEtage(posEtage);
+				posIdPorte = idPorte;
+				
+				callAPISavePosUser(m[0], m[1]);
+			})
+			.catch(e => console.log(e));
+		}
+		else if (typePorte != "" && typePorte != null) //Si on a un l'URL .../leqrcode 
+		{
+			fetch(urlTestApiSpring+ "qrcode/" + typePorte, 
+			{ method: "GET", "headers" : {
+				'Access-Control-Allow-Origin': "*",
+				'Access-Control-Allow-Headers': "*"}, "mode":"cors"}).then( response =>  response.json()).then(
+			r => {
+				posEtage = r.etage.id;
+				posX = r.position.x;
+				posY = r.position.y;
+				
+				fetch(urlTestApiSpring+ "salle/point/" + posX + "/" + posY + "/etage/" + posEtage, 
+				{ method: "GET", "headers" : {'Access-Control-Allow-Origin': "*", 'Access-Control-Allow-Headers': "*"}, "mode":"cors"}).then( response =>  response.json()).then(
+				r => {
+					posIdSalle1 = r.id_;
+				});
+				
+				setLayerPosition(map, posX, posY);
+				
+				switchToEtage(posEtage);
+				
+				callAPISavePosUser(posX, posY);
+			}).catch(e => console.log(e));
+		}
 	}
+}
+
+function callAPISavePosUser(x, y)
+{
+	let json = {"username":nomUser,"position":{"type":"Point","x":x,"y":y,"properties":{"id":posEtage,"nom":getNomEtage() }},"etage":{"id":posEtage,"nom":getNomEtage()},"dateDernierScan": new Date()};
+	// /utilisateur/{username} : Enregistre les pos des utilisateurs
+	fetch(urlTestApiSpring+ "utilisateur/" + nomUser, 
+	{ method: "PATCH", "headers" : {'Access-Control-Allow-Origin': "*", 'Access-Control-Allow-Headers': "*",
+							"X-Requested-With": "XMLHttpRequest", "Content-Type": "application/json"}, "mode":"cors", "body": JSON.stringify(json)}).then( response => response.json()).then(
+	r => { }).catch(e => console.log(e));
 }
 
 function getMilieuPorte(porte)
@@ -163,7 +239,7 @@ let urls = [
 	urlTestApiSpring + "salles", //Layer 0
 	urlTestApiSpring + "portes", //Layer 1
 	urlTestApiSpring + "escaliers" //Layer 2
-]; //On devrait plutot boucler sur les etages dans le cas de + d etages, et il faudrait aussi un appel escalier/etage/{idetage}
+];
 let urlsFetchs = [];
 urls.forEach(function(u) {
 	urlsFetchs.push(fetch(u, {"headers" : {
@@ -215,23 +291,68 @@ Promise.all(urlsFetchs)
 	etage = 1;
 	switchToEtage(etage);
 	
-	//On écoute les clics
-	map.on('singleclick', function (evt) {
-		salle_selectionnee = null;
-		map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) { //Pour chaque salle sous le clic (normalement une seule)
-			salle_selectionnee = getSalleById(map, feature.id_);
+	if (!demandePos) //Comportement de base
+	{
+		//On écoute les clics
+		map.on('singleclick', function (evt) {
+			salle_selectionnee = null;
+			map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) { //Pour chaque salle sous le clic (normalement une seule)
+				salle_selectionnee = getSalleById(map, feature.id_);
+			});
+			majAffichageSalle(salle_selectionnee);
+			if (mode=="pathfinding" && salle_selectionnee != null)
+				callAPIPath(posIdPorte, salle_selectionnee); 
 		});
-		majAffichageSalle(salle_selectionnee);
-		if (mode=="pathfinding" && salle_selectionnee != null && posIdPorte != null)
-			callAPIPath(posIdPorte, salle_selectionnee); 
-	});
-	//Selectionne visuellement une salle
-	map.removeInteraction(new Select());
-	map.addInteraction(new Select());
 	
-	addLayer(map, "position");
-	addLayer(map, "path");
-	setPositionWithUrl();
+		map.removeInteraction(new Select()); //Supprime les selections des qu on fait un clic
+		map.addInteraction(new Select()); //Selectionne visuellement une salle des qu on fait un clic
+		addLayer(map, "position"); 
+		addLayer(map, "path");
+		addLayer(map, "allPositions");
+		setPositionWithUrl();
+	}
+	else //Si on est en train de demander la position d'un nouveau qrcode
+	{
+		//On ajoute une interaction a la map qui affiche un point
+		let draw = new Draw({
+		  source: new VectorSource({wrapX: false}),
+		  type: "Point",
+		});
+		map.addInteraction(draw);
+		
+		map.on('singleclick', function (evt) {
+			let x = Math.round(10*evt.coordinate[0])/10; //pipe 0 means troncature a l unite
+			let y = Math.round(10*evt.coordinate[1])/10;
+			console.log(x, y);
+			// verifier x et y bien dans la map
+			fetch(urlTestApiSpring+ "salle/point/" + x + "/" + y + "/etage/" + etage, 
+			{ method: "GET", "headers" : {'Access-Control-Allow-Origin': "*", 'Access-Control-Allow-Headers': "*"}, "mode":"cors"}).then( response =>  response.json()).then(
+			response => {
+				if (confirm("Valider la positon à cet endroit ?"))
+				{
+					let json = {"text": newqrcode,"position":{"type":"Point","x":x,"y":y,"properties":{"id":etage,"nom": getNomEtage()}},"etage":{"id": etage,"nom": nomEtage}};
+					// On envoie le nouveau qrcode a la bdd
+					fetch(urlTestApiSpring+ "qrcode", 
+					{ 
+						method: "POST", 
+						"headers" : {
+							'Access-Control-Allow-Origin': "*",
+							'Access-Control-Allow-Headers': "*",
+							"X-Requested-With": "XMLHttpRequest",
+							"Content-Type": "application/json"}, 
+						"mode":"cors",
+						"body" : JSON.stringify(json)
+					}).then( response =>  response.json()).then(
+					r => {
+						alert("Votre qrCode a bien été ajouté");
+						window.location.href = urlTestOpenLayers+newqrcode;
+					});
+				}
+			}).catch(function(error) {
+				alert("Ce point n'est pas valide, veuillez en choisir un autre");
+			});
+		});
+	}
 })
 .catch(function(error) {
     console.log(error);
@@ -284,13 +405,7 @@ function switchToEtage(numEtage)
 		{
 			case "portes": 
 			case "salles":
-				lay.getSource().getFeatures().forEach(function (feature) {
-					if (feature.get("etage")["id"]==numEtage)
-						showFeature(feature, lay.get("id"));
-					else
-						hideFeature(feature, lay.get("id"));
-				});
-				// lay.setVisible(numEtage==1);
+				majAffichageCouche(lay);
 				break;
 			case "escaliers":
 				lay.getSource().getFeatures().forEach(function (feature) {
@@ -303,11 +418,17 @@ function switchToEtage(numEtage)
 			case "position": lay.setVisible(numEtage==posEtage);
 				break;
 			case "path": 
-				majAffichageCouchePath(lay);
+				majAffichageCouche(lay);
 				break;
 		}
 	});
 	document.getElementById("selectEtage").value=numEtage;
+}
+
+function getNomEtage()
+{
+	let sel = document.getElementById("selectEtage");
+	return sel.options[sel.selectedIndex].text;
 }
 
 
@@ -339,7 +460,7 @@ selectMode.addEventListener("change", function(e){
 	majAffichageFormEdit(mode, salle_selectionnee)
 	if (mode=="pathfinding")
 	{
-		if (posIdPorte!=null)
+		if (posIdPorte!=null || (posX != null && posY != null))
 		{
 			if (salle_selectionnee != null)
 				callAPIPath(posIdPorte, salle_selectionnee); 
@@ -348,7 +469,12 @@ selectMode.addEventListener("change", function(e){
 			alert("Scannez un QR-code pour définir votre position");
 	}
 	else
-		majAffichageCouchePath(getLayerById(map, "path"));		
+		majAffichageCouche(getLayerById(map, "path"));		
+	
+	if (mode == "seeAllUser")
+		callAPIAllUsers();
+	else
+		clearLayerById(map, "allPositions");
 });
 
 function majAffichageFormEdit(mode, salle)
@@ -424,13 +550,10 @@ function addLayer(map, id, vectorSource=null)
 		  features: new GeoJSON().readFeatures(geojsonObject),
 		});
 	}
-	let style;
-	if (id=="position") style = stylePoint;
-	else style = stylePath;
 	let layerPos = new VectorLayer({
 		id: id,
 		source: vectorSource,
-		style: style
+		style: getStyleLayerById(id)
 	})
 	map.addLayer(layerPos);
 }
@@ -462,6 +585,16 @@ function clearLayer(lay)
 	lay.getSource().clear();
 }
 
+//Affiche les features d'une couche en fonction de leur etage
+function majAffichageCouche(lay)
+{
+	lay.getSource().getFeatures().forEach(function (feature) {
+		if (feature.get("etage")["id"]==etage)
+			showFeature(feature, lay.get("id"));
+		else
+			hideFeature(feature, lay.get("id"));
+	});
+}
 
 //====== Maj couche Localisation
 function setLayerPosition(map, x, y)
@@ -474,27 +607,22 @@ function setLayerPosition(map, x, y)
 	);
 }
 
-//====== Maj couche Path
-function majAffichageCouchePath(lay)
-{
-	lay.getSource().getFeatures().forEach(function (feature) {
-		if (feature.get("etage")["id"]==etage)
-			showFeature(feature, lay.get("id"));
-		else
-			hideFeature(feature, lay.get("id"));
-	});
-}
-
+//====== Couche Path
 function callAPIPath(idPorte, salleDestination)
 {
 	let idSalleDestination = salleDestination.id_;
-	if (salleDestination.getProperties()["fonction"]["nom"] == "couloir" || posSalle1.id == idSalleDestination || posSalle2.id == idSalleDestination)
+	if (salleDestination.getProperties()["fonction"]["nom"] == "couloir" || posIdSalle1 == idSalleDestination || posIdSalle2 == idSalleDestination) //Si on ne clique pas dans un couloir, ni une salle adjacente a la porte sur laquelle on se trouve, ni la salle dans laquelle on est
 	{
-		setLayerPath(map, []);
+		setLayerPath(map, []); //Effacer le path
 		return;
 	}
-	if (idPorte != null && idSalleDestination != null)
-	fetch(urlTestApiSpring + "trajet/porteDepart/"+idPorte+"/salle/"+idSalleDestination, 
+	let urlFetch;
+	if (idPorte != null && idSalleDestination != null) //On peut demander la liste des lignes pour tracer le path entre la porte et la salle
+		urlFetch =urlTestApiSpring + "trajet/porteDepart/"+idPorte+"/salle/"+idSalleDestination;
+	else if (posX != null && posY != null && idSalleDestination != null)
+		urlFetch = urlTestApiSpring + "trajet/position/" + posX + "/"+ posY + "/etage/" + posEtage + "/salle/" + idSalleDestination; //trajet/position/{x}/{y}/etage/{idEtage}/salle/{idSalle}
+
+	fetch(urlFetch,
 	{"headers" : {
 	'Access-Control-Allow-Origin': "*",
 	'Access-Control-Allow-Headers': "*"},
@@ -530,7 +658,38 @@ function setLayerPath(map, listeLines)
 	  features: new GeoJSON().readFeatures(geojsonObject),
 	});
 	addLayer(map, "path", vectorSource);
-	majAffichageCouchePath(getLayerById(map, "path"));
+	majAffichageCouche(getLayerById(map, "path"));
+}
+
+//====== Couche all pos users
+function callAPIAllUsers()
+{
+	fetch(urlTestApiSpring + "/utilisateurs",
+	{"headers" : {
+	'Access-Control-Allow-Origin': "*",
+	'Access-Control-Allow-Headers': "*"},
+	"mode":"cors"}
+	).then( 
+		response =>  response.json())
+	.then(
+		listeUsers => {
+			setLayerAllPos(map, listeUsers);
+		})
+	.catch(e => console.log(e))
+} 
+
+function setLayerAllPos(map, listePoints)
+{	
+	let lay = getLayerById(map, "allPositions");
+	listePoints.forEach(point => {
+		lay.getSource().addFeature(
+			new Feature({
+				geometry: new Point([point.position.x, point.position.y]),
+				properties: point.properties
+			})
+		);
+	});
+	
 }
 
 //====== Feature 
@@ -552,6 +711,7 @@ function getStyleLayerById(idLayer)
 		case "escaliers": return styleEscaliers;
 		case "position": return stylePoint;
 		case "path": return stylePath;
+		case "allPositions": return stylePoint2;
 	}
 }
 
@@ -566,7 +726,7 @@ function setLayerPath(map, listeLines)
 	  features: new GeoJSON().readFeatures(geojsonObject),
 	});
 	addLayer(map, "path", vectorSource);
-	majAffichageCouchePath(getLayerById(map, "path"));
+	majAffichageCouche(getLayerById(map, "path"));
 }
 
 

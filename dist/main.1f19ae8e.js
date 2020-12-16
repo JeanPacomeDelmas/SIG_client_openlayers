@@ -93802,21 +93802,30 @@ var _condition = require("ol/events/condition");
 
 var _Point = _interopRequireDefault(require("ol/geom/Point"));
 
+var _Draw = _interopRequireDefault(require("ol/interaction/Draw"));
+
+var _proj = require("ol/proj");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 //======= Declarations
-// layers : [salles, portes, escaliers, position, path]
+// layers : [salles, portes, escaliers, position, path, allPositions]
 var map;
 var salle_selectionnee;
 var mode;
-var etage; //variables pour la position
+var etage;
+var demandePos = false; //true si on doit demander la position a l'utilisateur pour ajouter un qrCode
 
+var newqrcode;
+var nomUser; //variables pour la position
+
+var posX;
+var posY;
 var posIdPorte;
 var posEtage;
-var posSalle1;
-var posSalle2;
-var ok; // let urlTestApiSpring = "http://192.168.1.38:8081/api/"
-// let urlTestOpenLayers = "http://192.168.1.38:1234/"
+var posIdSalle1;
+var posIdSalle2; // let urlTestApiSpring = "http://192.168.1.38:8081/api/";
+// let urlTestOpenLayers = "http://192.168.1.38:1234/";
 
 var urlTestApiSpring = "http://localhost:8081/api/";
 var urlTestOpenLayers = "http://localhost:1234/"; //======= Styles
@@ -93887,58 +93896,166 @@ var stylePath = new _style.Style({
   fill: new _style.Fill({
     color: 'rgba(0, 0, 255, 0.1)'
   })
-}); //====== Get position en fonction de l'URL
+});
+var stylePoint2 = new _style.Style({
+  image: new _style.Circle({
+    radius: 5,
+    fill: new _style.Fill({
+      color: 'lightBlue'
+    }),
+    stroke: new _style.Stroke({
+      color: 'blue',
+      width: 1
+    })
+  })
+}); //====== Read URL to know if asking user position
+
+var url = location.href; //peut etre .../nom/escalier/1/bas
+//peut etre .../nom/porte/1
+//peut etre .../nom/addqrc/leqrcode //Ici on ne regarde que celui-la, les autres sont dans la fonction setPositionWithUrl()
+//peut etre .../nom/leqrcode
+
+if (url.length > urlTestOpenLayers.length) //S'il y a des parametres
+  {
+    var parametres = url.split("/");
+    nomUser = parametres[3];
+    var demande = parametres[4];
+
+    if (demande == "addqrc") {
+      demandePos = true;
+      newqrcode = parametres[4]; //On demande la position a l'utilisateur
+
+      document.getElementById("div_normale").style.display = "none";
+      document.getElementById("div_demande_pos").style.display = "inline-block";
+    }
+  } //====== Get position en fonction de l'URL
+
 
 function setPositionWithUrl() {
   var url = location.href;
 
   if (url.length > urlTestOpenLayers.length) //S'il y a des parametres
     {
-      var parametres = url.split("/");
-      var typePorte = parametres[3];
-      var idPorte = parametres[4];
+      var _parametres = url.split("/");
+
+      var typePorte = _parametres[4];
+      var idPorte = _parametres[5];
       var coteEscalier;
-      if (parametres.length > 5) ;
-      coteEscalier = parametres[5];
-      var urlFetch;
-      fetch(urlTestApiSpring + typePorte + "/" + idPorte, {
-        method: "GET",
-        "headers": {
-          'Access-Control-Allow-Origin': "*",
-          'Access-Control-Allow-Headers': "*"
-        },
-        "mode": "cors"
-      }).then(function (response) {
-        return response.json();
-      }).then(function (r) {
-        var entree;
+      if (_parametres.length > 6) ;
+      coteEscalier = _parametres[6];
 
-        if (typePorte == "escalier") {
-          if (coteEscalier == "bas") {
-            posEtage = 1;
-            entree = r["sortieB"];
-          } else if (coteEscalier == "haut") {
-            posEtage = 2;
-            entree = r["sortieH"];
-          }
+      if (typePorte == "escalier" || typePorte == "porte") //Si on a l'URL .../escalier/1/bas ou .../porte/1
+        {
+          fetch(urlTestApiSpring + typePorte + "/" + idPorte, {
+            method: "GET",
+            "headers": {
+              'Access-Control-Allow-Origin': "*",
+              'Access-Control-Allow-Headers': "*"
+            },
+            "mode": "cors"
+          }).then(function (response) {
+            return response.json();
+          }).then(function (r) {
+            var entree;
 
-          posSalle1 = r.salleB;
-          posSalle2 = r.salleH;
-        } else {
-          entree = r.geometry;
-          posEtage = r.properties.etage.id;
-          posSalle1 = r.salle1;
-          posSalle2 = r.salle2;
+            if (typePorte == "escalier") {
+              if (coteEscalier == "bas") {
+                posEtage = 1;
+                entree = r["sortieB"];
+              } else if (coteEscalier == "haut") {
+                posEtage = 2;
+                entree = r["sortieH"];
+              }
+
+              posIdSalle1 = r.salleB.id;
+              posIdSalle2 = r.salleH.id;
+            } else typePorte == "porte";
+
+            {
+              entree = r.geometry;
+              posEtage = r.properties.etage.id;
+              posIdSalle1 = r.salle1.id;
+              posIdSalle2 = r.salle2.id;
+            }
+            var m = getMilieuPorte(entree);
+            setLayerPosition(map, m[0], m[1]);
+            switchToEtage(posEtage);
+            posIdPorte = idPorte;
+            callAPISavePosUser(m[0], m[1]);
+          }).catch(function (e) {
+            return console.log(e);
+          });
+        } else if (typePorte != "" && typePorte != null) //Si on a un l'URL .../leqrcode 
+        {
+          fetch(urlTestApiSpring + "qrcode/" + typePorte, {
+            method: "GET",
+            "headers": {
+              'Access-Control-Allow-Origin': "*",
+              'Access-Control-Allow-Headers': "*"
+            },
+            "mode": "cors"
+          }).then(function (response) {
+            return response.json();
+          }).then(function (r) {
+            posEtage = r.etage.id;
+            posX = r.position.x;
+            posY = r.position.y;
+            fetch(urlTestApiSpring + "salle/point/" + posX + "/" + posY + "/etage/" + posEtage, {
+              method: "GET",
+              "headers": {
+                'Access-Control-Allow-Origin': "*",
+                'Access-Control-Allow-Headers': "*"
+              },
+              "mode": "cors"
+            }).then(function (response) {
+              return response.json();
+            }).then(function (r) {
+              posIdSalle1 = r.id_;
+            });
+            setLayerPosition(map, posX, posY);
+            switchToEtage(posEtage);
+            callAPISavePosUser(posX, posY);
+          }).catch(function (e) {
+            return console.log(e);
+          });
         }
-
-        var m = getMilieuPorte(entree);
-        setLayerPosition(map, m[0], m[1]);
-        switchToEtage(posEtage);
-        posIdPorte = idPorte;
-      }).catch(function (e) {
-        return console.log(e);
-      });
     }
+}
+
+function callAPISavePosUser(x, y) {
+  var json = {
+    "username": nomUser,
+    "position": {
+      "type": "Point",
+      "x": x,
+      "y": y,
+      "properties": {
+        "id": posEtage,
+        "nom": getNomEtage()
+      }
+    },
+    "etage": {
+      "id": posEtage,
+      "nom": getNomEtage()
+    },
+    "dateDernierScan": new Date()
+  }; // /utilisateur/{username} : Enregistre les pos des utilisateurs
+
+  fetch(urlTestApiSpring + "utilisateur/" + nomUser, {
+    method: "PATCH",
+    "headers": {
+      'Access-Control-Allow-Origin': "*",
+      'Access-Control-Allow-Headers': "*",
+      "X-Requested-With": "XMLHttpRequest",
+      "Content-Type": "application/json"
+    },
+    "mode": "cors",
+    "body": JSON.stringify(json)
+  }).then(function (response) {
+    return response.json();
+  }).then(function (r) {}).catch(function (e) {
+    return console.log(e);
+  });
 }
 
 function getMilieuPorte(porte) {
@@ -93952,8 +94069,7 @@ function getMilieuPorte(porte) {
 var urls = [urlTestApiSpring + "salles", //Layer 0
 urlTestApiSpring + "portes", //Layer 1
 urlTestApiSpring + "escaliers" //Layer 2
-]; //On devrait plutot boucler sur les etages dans le cas de + d etages, et il faudrait aussi un appel escalier/etage/{idetage}
-
+];
 var urlsFetchs = [];
 urls.forEach(function (u) {
   urlsFetchs.push(fetch(u, {
@@ -94012,23 +94128,94 @@ Promise.all(urlsFetchs).then(function (entities) {
     })
   });
   etage = 1;
-  switchToEtage(etage); //On écoute les clics
+  switchToEtage(etage);
 
-  map.on('singleclick', function (evt) {
-    salle_selectionnee = null;
-    map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) {
-      //Pour chaque salle sous le clic (normalement une seule)
-      salle_selectionnee = getSalleById(map, feature.id_);
-    });
-    majAffichageSalle(salle_selectionnee);
-    if (mode == "pathfinding" && salle_selectionnee != null && posIdPorte != null) callAPIPath(posIdPorte, salle_selectionnee);
-  }); //Selectionne visuellement une salle
+  if (!demandePos) //Comportement de base
+    {
+      //On écoute les clics
+      map.on('singleclick', function (evt) {
+        salle_selectionnee = null;
+        map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) {
+          //Pour chaque salle sous le clic (normalement une seule)
+          salle_selectionnee = getSalleById(map, feature.id_);
+        });
+        majAffichageSalle(salle_selectionnee);
+        if (mode == "pathfinding" && salle_selectionnee != null) callAPIPath(posIdPorte, salle_selectionnee);
+      });
+      map.removeInteraction(new _Select.default()); //Supprime les selections des qu on fait un clic
 
-  map.removeInteraction(new _Select.default());
-  map.addInteraction(new _Select.default());
-  addLayer(map, "position");
-  addLayer(map, "path");
-  setPositionWithUrl();
+      map.addInteraction(new _Select.default()); //Selectionne visuellement une salle des qu on fait un clic
+
+      addLayer(map, "position");
+      addLayer(map, "path");
+      addLayer(map, "allPositions");
+      setPositionWithUrl();
+    } else //Si on est en train de demander la position d'un nouveau qrcode
+    {
+      //On ajoute une interaction a la map qui affiche un point
+      var draw = new _Draw.default({
+        source: new _source.Vector({
+          wrapX: false
+        }),
+        type: "Point"
+      });
+      map.addInteraction(draw);
+      map.on('singleclick', function (evt) {
+        var x = Math.round(10 * evt.coordinate[0]) / 10; //pipe 0 means troncature a l unite
+
+        var y = Math.round(10 * evt.coordinate[1]) / 10;
+        console.log(x, y); // verifier x et y bien dans la map
+
+        fetch(urlTestApiSpring + "salle/point/" + x + "/" + y + "/etage/" + etage, {
+          method: "GET",
+          "headers": {
+            'Access-Control-Allow-Origin': "*",
+            'Access-Control-Allow-Headers': "*"
+          },
+          "mode": "cors"
+        }).then(function (response) {
+          return response.json();
+        }).then(function (response) {
+          if (confirm("Valider la positon à cet endroit ?")) {
+            var json = {
+              "text": newqrcode,
+              "position": {
+                "type": "Point",
+                "x": x,
+                "y": y,
+                "properties": {
+                  "id": etage,
+                  "nom": getNomEtage()
+                }
+              },
+              "etage": {
+                "id": etage,
+                "nom": nomEtage
+              }
+            }; // On envoie le nouveau qrcode a la bdd
+
+            fetch(urlTestApiSpring + "qrcode", {
+              method: "POST",
+              "headers": {
+                'Access-Control-Allow-Origin': "*",
+                'Access-Control-Allow-Headers': "*",
+                "X-Requested-With": "XMLHttpRequest",
+                "Content-Type": "application/json"
+              },
+              "mode": "cors",
+              "body": JSON.stringify(json)
+            }).then(function (response) {
+              return response.json();
+            }).then(function (r) {
+              alert("Votre qrCode a bien été ajouté");
+              window.location.href = urlTestOpenLayers + newqrcode;
+            });
+          }
+        }).catch(function (error) {
+          alert("Ce point n'est pas valide, veuillez en choisir un autre");
+        });
+      });
+    }
 }).catch(function (error) {
   console.log(error);
 });
@@ -94076,10 +94263,7 @@ function switchToEtage(numEtage) {
       //On devrait plutot boucler sur les etages dans le cas de + d etages
       case "portes":
       case "salles":
-        lay.getSource().getFeatures().forEach(function (feature) {
-          if (feature.get("etage")["id"] == numEtage) showFeature(feature, lay.get("id"));else hideFeature(feature, lay.get("id"));
-        }); // lay.setVisible(numEtage==1);
-
+        majAffichageCouche(lay);
         break;
 
       case "escaliers":
@@ -94093,11 +94277,16 @@ function switchToEtage(numEtage) {
         break;
 
       case "path":
-        majAffichageCouchePath(lay);
+        majAffichageCouche(lay);
         break;
     }
   });
   document.getElementById("selectEtage").value = numEtage;
+}
+
+function getNomEtage() {
+  var sel = document.getElementById("selectEtage");
+  return sel.options[sel.selectedIndex].text;
 } //====== Initialisation de la liste des fonctions des salles
 
 
@@ -94127,10 +94316,12 @@ selectMode.addEventListener("change", function (e) {
   majAffichageFormEdit(mode, salle_selectionnee);
 
   if (mode == "pathfinding") {
-    if (posIdPorte != null) {
+    if (posIdPorte != null || posX != null && posY != null) {
       if (salle_selectionnee != null) callAPIPath(posIdPorte, salle_selectionnee);
     } else alert("Scannez un QR-code pour définir votre position");
-  } else majAffichageCouchePath(getLayerById(map, "path"));
+  } else majAffichageCouche(getLayerById(map, "path"));
+
+  if (mode == "seeAllUser") callAPIAllUsers();else clearLayerById(map, "allPositions");
 });
 
 function majAffichageFormEdit(mode, salle) {
@@ -94203,12 +94394,10 @@ function addLayer(map, id) {
     });
   }
 
-  var style;
-  if (id == "position") style = stylePoint;else style = stylePath;
   var layerPos = new _layer.Vector({
     id: id,
     source: vectorSource,
-    style: style
+    style: getStyleLayerById(id)
   });
   map.addLayer(layerPos);
 }
@@ -94236,6 +94425,13 @@ function clearLayerById(map, id) {
 
 function clearLayer(lay) {
   lay.getSource().clear();
+} //Affiche les features d'une couche en fonction de leur etage
+
+
+function majAffichageCouche(lay) {
+  lay.getSource().getFeatures().forEach(function (feature) {
+    if (feature.get("etage")["id"] == etage) showFeature(feature, lay.get("id"));else hideFeature(feature, lay.get("id"));
+  });
 } //====== Maj couche Localisation
 
 
@@ -94244,24 +94440,24 @@ function setLayerPosition(map, x, y) {
   lay.getSource().addFeature(new _Feature.default({
     geometry: new _Point.default([x, y])
   }));
-} //====== Maj couche Path
+} //====== Couche Path
 
-
-function majAffichageCouchePath(lay) {
-  lay.getSource().getFeatures().forEach(function (feature) {
-    if (feature.get("etage")["id"] == etage) showFeature(feature, lay.get("id"));else hideFeature(feature, lay.get("id"));
-  });
-}
 
 function callAPIPath(idPorte, salleDestination) {
   var idSalleDestination = salleDestination.id_;
 
-  if (salleDestination.getProperties()["fonction"]["nom"] == "couloir" || posSalle1.id == idSalleDestination || posSalle2.id == idSalleDestination) {
-    setLayerPath(map, []);
-    return;
-  }
+  if (salleDestination.getProperties()["fonction"]["nom"] == "couloir" || posIdSalle1 == idSalleDestination || posIdSalle2 == idSalleDestination) //Si on ne clique pas dans un couloir, ni une salle adjacente a la porte sur laquelle on se trouve, ni la salle dans laquelle on est
+    {
+      setLayerPath(map, []); //Effacer le path
 
-  if (idPorte != null && idSalleDestination != null) fetch(urlTestApiSpring + "trajet/porteDepart/" + idPorte + "/salle/" + idSalleDestination, {
+      return;
+    }
+
+  var urlFetch;
+  if (idPorte != null && idSalleDestination != null) //On peut demander la liste des lignes pour tracer le path entre la porte et la salle
+    urlFetch = urlTestApiSpring + "trajet/porteDepart/" + idPorte + "/salle/" + idSalleDestination;else if (posX != null && posY != null && idSalleDestination != null) urlFetch = urlTestApiSpring + "trajet/position/" + posX + "/" + posY + "/etage/" + posEtage + "/salle/" + idSalleDestination; //trajet/position/{x}/{y}/etage/{idEtage}/salle/{idSalle}
+
+  fetch(urlFetch, {
     "headers": {
       'Access-Control-Allow-Origin': "*",
       'Access-Control-Allow-Headers': "*"
@@ -94302,7 +94498,34 @@ function setLayerPath(map, listeLines) {
     features: new _GeoJSON.default().readFeatures(geojsonObject)
   });
   addLayer(map, "path", vectorSource);
-  majAffichageCouchePath(getLayerById(map, "path"));
+  majAffichageCouche(getLayerById(map, "path"));
+} //====== Couche all pos users
+
+
+function callAPIAllUsers() {
+  fetch(urlTestApiSpring + "/utilisateurs", {
+    "headers": {
+      'Access-Control-Allow-Origin': "*",
+      'Access-Control-Allow-Headers': "*"
+    },
+    "mode": "cors"
+  }).then(function (response) {
+    return response.json();
+  }).then(function (listeUsers) {
+    setLayerAllPos(map, listeUsers);
+  }).catch(function (e) {
+    return console.log(e);
+  });
+}
+
+function setLayerAllPos(map, listePoints) {
+  var lay = getLayerById(map, "allPositions");
+  listePoints.forEach(function (point) {
+    lay.getSource().addFeature(new _Feature.default({
+      geometry: new _Point.default([point.position.x, point.position.y]),
+      properties: point.properties
+    }));
+  });
 } //====== Feature 
 
 
@@ -94331,6 +94554,9 @@ function getStyleLayerById(idLayer) {
 
     case "path":
       return stylePath;
+
+    case "allPositions":
+      return stylePoint2;
   }
 }
 
@@ -94344,9 +94570,9 @@ function setLayerPath(map, listeLines) {
     features: new _GeoJSON.default().readFeatures(geojsonObject)
   });
   addLayer(map, "path", vectorSource);
-  majAffichageCouchePath(getLayerById(map, "path"));
+  majAffichageCouche(getLayerById(map, "path"));
 }
-},{"ol/ol.css":"node_modules/ol/ol.css","ol/Feature":"node_modules/ol/Feature.js","ol/format/GeoJSON":"node_modules/ol/format/GeoJSON.js","ol/Map":"node_modules/ol/Map.js","ol/View":"node_modules/ol/View.js","ol/source":"node_modules/ol/source.js","ol/layer":"node_modules/ol/layer.js","ol/style":"node_modules/ol/style.js","ol/interaction/Select":"node_modules/ol/interaction/Select.js","ol/events/condition":"node_modules/ol/events/condition.js","ol/geom/Point":"node_modules/ol/geom/Point.js"}],"../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"ol/ol.css":"node_modules/ol/ol.css","ol/Feature":"node_modules/ol/Feature.js","ol/format/GeoJSON":"node_modules/ol/format/GeoJSON.js","ol/Map":"node_modules/ol/Map.js","ol/View":"node_modules/ol/View.js","ol/source":"node_modules/ol/source.js","ol/layer":"node_modules/ol/layer.js","ol/style":"node_modules/ol/style.js","ol/interaction/Select":"node_modules/ol/interaction/Select.js","ol/events/condition":"node_modules/ol/events/condition.js","ol/geom/Point":"node_modules/ol/geom/Point.js","ol/interaction/Draw":"node_modules/ol/interaction/Draw.js","ol/proj":"node_modules/ol/proj.js"}],"../../../../../../AppData/Roaming/npm-cache/_npx/17164/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -94374,7 +94600,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58944" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54662" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
@@ -94550,5 +94776,5 @@ function hmrAcceptRun(bundle, id) {
     return true;
   }
 }
-},{}]},{},["../../../../../../AppData/Roaming/npm-cache/_npx/15648/node_modules/parcel/src/builtins/hmr-runtime.js","main.js"], null)
+},{}]},{},["../../../../../../AppData/Roaming/npm-cache/_npx/17164/node_modules/parcel/src/builtins/hmr-runtime.js","main.js"], null)
 //# sourceMappingURL=/main.1f19ae8e.js.map
