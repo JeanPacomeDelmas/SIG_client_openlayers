@@ -146,7 +146,7 @@ function setPositionWithUrl()
 		let idPorte = parametres[5];
 		let coteEscalier;
 		
-		if (parametres.length>6);
+		if (parametres.length>6)
 			coteEscalier = parametres[6];
 			
 		if (typePorte == "escalier" || typePorte == "porte") //Si on a l'URL .../escalier/1/bas ou .../porte/1
